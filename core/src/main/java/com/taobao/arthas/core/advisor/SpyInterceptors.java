@@ -43,8 +43,8 @@ public class SpyInterceptors {
         public static void atLineBefore(@Binding.This Object target, @Binding.Class Class<?> clazz,
                                         @Binding.MethodInfo String methodInfo, @Binding.Args Object[] args,
                                         @Binding.LineBefore int line,
-                                        @Binding.LocalVars Object[] vars,
-                                        @Binding.LocalVarNames String[] varNames) {
+                                        @Binding.LocalVars(excludePattern = "*$*") Object[] vars,
+                                        @Binding.LocalVarNames(excludePattern = "*$*") String[] varNames) {
             SpyAPI.atLineBefore(clazz, methodInfo, target, args, line, vars, varNames);
         }
 
