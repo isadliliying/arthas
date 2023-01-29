@@ -166,7 +166,7 @@ public class Advice {
                 target,
                 params,
                 null, //returnObj
-                null, //returnObj
+                null, //throwExp
                 varMap,
                 AccessPoint.ACCESS_BEFORE_LINE.getValue()
         );

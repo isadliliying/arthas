@@ -10,16 +10,11 @@ import com.taobao.arthas.core.command.express.ExpressException;
 import com.taobao.arthas.core.command.express.ExpressFactory;
 import com.taobao.arthas.core.command.model.LookModel;
 import com.taobao.arthas.core.command.model.ObjectVO;
-import com.taobao.arthas.core.command.model.WatchModel;
 import com.taobao.arthas.core.shell.command.CommandProcess;
-import com.taobao.arthas.core.util.Constants;
 import com.taobao.arthas.core.util.LogUtil;
 import com.taobao.arthas.core.util.StringUtils;
-import com.taobao.arthas.core.util.ThreadLocalWatch;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 class LookAdviceListener extends AdviceListenerAdapter {
 
@@ -51,6 +46,22 @@ class LookAdviceListener extends AdviceListenerAdapter {
 
     }
 
+    /**
+     * 解析变量名
+     * 处理重复的变量名
+     */
+    private String determinedVarName(Set<String> nameSet, String varName) {
+        String tmpVarName = varName;
+        for (int i = 1; i < Integer.MAX_VALUE; i++) {
+            if (nameSet.contains(tmpVarName)) {
+                tmpVarName = varName + "-renamed-" + i;
+            } else {
+                return tmpVarName;
+            }
+        }
+        throw new IllegalArgumentException("illegal varName:" + varName);
+    }
+
     @Override
     public void beforeLine(ClassLoader loader, Class<?> clazz, ArthasMethod method, Object target, Object[] args, int line, Object[] vars, String[] varNames) throws Throwable {
         try {
@@ -59,10 +70,11 @@ class LookAdviceListener extends AdviceListenerAdapter {
             for (int i = 0; i < vars.length; i++) {
                 //不放入this
                 if ("this".equals(varNames[i]))continue;
-                varMap.put(varNames[i],vars[i]);
+                String varName = determinedVarName(varMap.keySet(), varNames[i]);
+                varMap.put(varName, vars[i]);
             }
 
-            Advice advice = Advice.newForLooking(loader,clazz,method,target,args,varMap);
+            Advice advice = Advice.newForLooking(loader, clazz, method, target, args, varMap);
             boolean conditionResult = isConditionMet(command.getConditionExpress(), advice);
             if (this.isVerbose()) {
                 process.write("Condition express: " + command.getConditionExpress() + " , result: " + conditionResult + "\n");
