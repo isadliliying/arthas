@@ -63,7 +63,7 @@ class LookAdviceListener extends AdviceListenerAdapter {
     }
 
     @Override
-    public void beforeLine(ClassLoader loader, Class<?> clazz, ArthasMethod method, Object target, Object[] args, int line, Object[] vars, String[] varNames) throws Throwable {
+    public void lookAfterLoc(ClassLoader loader, Class<?> clazz, ArthasMethod method, Object target, Object[] args, String lookLoc, Object[] vars, String[] varNames) throws Throwable {
         try {
 
             Map<String,Object> varMap = new HashMap<String,Object>(vars.length);
@@ -88,7 +88,7 @@ class LookAdviceListener extends AdviceListenerAdapter {
                 model.setSizeLimit(command.getSizeLimit());
                 model.setClassName(advice.getClazz().getName());
                 model.setMethodName(advice.getMethod().getName());
-                model.setAccessPoint(AccessPoint.ACCESS_BEFORE_LINE.getKey() + ":" + line);
+                model.setAccessPoint(AccessPoint.ACCESS_AFTER_LOOK_LOCATION.getKey() + ":" + lookLoc);
 
                 process.appendResult(model);
                 process.times().incrementAndGet();

@@ -64,8 +64,8 @@ public class SpyAPI {
         spyInstance.atExit(clazz, methodInfo, target, args, returnObject);
     }
 
-    public static void atLineBefore(Class<?> clazz, String methodInfo, Object target, Object[] args, int line, Object[] vars, String[] varNames) {
-        spyInstance.atLineBefore(clazz, methodInfo, target, args, line, vars, varNames);
+    public static void atLineBefore(Class<?> clazz, String methodInfo, Object target, Object[] args, String lookLoc, Object[] vars, String[] varNames) {
+        spyInstance.lookAfterLoc(clazz, methodInfo, target, args, lookLoc, vars, varNames);
     }
 
     public static void atExceptionExit(Class<?> clazz, String methodInfo, Object target,
@@ -92,8 +92,8 @@ public class SpyAPI {
         public abstract void atExit(Class<?> clazz, String methodInfo, Object target, Object[] args,
                 Object returnObject);
 
-        public abstract void atLineBefore(Class<?> clazz, String methodInfo, Object target, Object[] args,
-                                          int line, Object[] vars, String[] varNames);
+        public abstract void lookAfterLoc(Class<?> clazz, String methodInfo, Object target, Object[] args,
+                                          String lookLoc, Object[] vars, String[] varNames);
 
         public abstract void atExceptionExit(Class<?> clazz, String methodInfo, Object target,
                 Object[] args, Throwable throwable);
@@ -117,7 +117,7 @@ public class SpyAPI {
         }
 
         @Override
-        public void atLineBefore(Class<?> clazz, String methodInfo, Object target, Object[] args, int line, Object[] vars, String[] varNames) {
+        public void lookAfterLoc(Class<?> clazz, String methodInfo, Object target, Object[] args, String lookLoc, Object[] vars, String[] varNames) {
 
         }
 

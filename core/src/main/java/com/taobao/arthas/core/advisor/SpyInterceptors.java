@@ -42,10 +42,11 @@ public class SpyInterceptors {
 
         public static void atLineBefore(@Binding.This Object target, @Binding.Class Class<?> clazz,
                                         @Binding.MethodInfo String methodInfo, @Binding.Args Object[] args,
-                                        @Binding.LineBefore int line,
+                                        //转成binding之后再赋值,这里默认是空串
+                                        @Binding.StringValue String lookLoc,
                                         @Binding.LocalVars(excludePattern = "*$*") Object[] vars,
                                         @Binding.LocalVarNames(excludePattern = "*$*") String[] varNames) {
-            SpyAPI.atLineBefore(clazz, methodInfo, target, args, line, vars, varNames);
+            SpyAPI.atLineBefore(clazz, methodInfo, target, args, lookLoc, vars, varNames);
         }
 
     }

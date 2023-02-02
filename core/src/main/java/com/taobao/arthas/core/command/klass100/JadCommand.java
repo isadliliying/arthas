@@ -2,40 +2,25 @@ package com.taobao.arthas.core.command.klass100;
 
 import com.alibaba.arthas.deps.org.slf4j.Logger;
 import com.alibaba.arthas.deps.org.slf4j.LoggerFactory;
+import com.alibaba.bytekit.utils.AsmUtils;
+import com.alibaba.deps.org.objectweb.asm.tree.ClassNode;
+import com.alibaba.deps.org.objectweb.asm.tree.MethodNode;
 import com.taobao.arthas.common.Pair;
 import com.taobao.arthas.core.command.Constants;
-import com.taobao.arthas.core.command.model.ClassVO;
-import com.taobao.arthas.core.command.model.ClassLoaderVO;
-import com.taobao.arthas.core.command.model.JadModel;
-import com.taobao.arthas.core.command.model.MessageModel;
-import com.taobao.arthas.core.command.model.RowAffectModel;
+import com.taobao.arthas.core.command.model.*;
 import com.taobao.arthas.core.shell.cli.Completion;
 import com.taobao.arthas.core.shell.cli.CompletionUtils;
 import com.taobao.arthas.core.shell.command.AnnotatedCommand;
 import com.taobao.arthas.core.shell.command.CommandProcess;
 import com.taobao.arthas.core.shell.command.ExitStatus;
-import com.taobao.arthas.core.util.ClassUtils;
-import com.taobao.arthas.core.util.ClassLoaderUtils;
-import com.taobao.arthas.core.util.CommandUtils;
-import com.taobao.arthas.core.util.Decompiler;
-import com.taobao.arthas.core.util.InstrumentationUtils;
-import com.taobao.arthas.core.util.SearchUtils;
+import com.taobao.arthas.core.util.*;
 import com.taobao.arthas.core.util.affect.RowAffect;
-import com.taobao.middleware.cli.annotations.Argument;
-import com.taobao.middleware.cli.annotations.DefaultValue;
-import com.taobao.middleware.cli.annotations.Description;
-import com.taobao.middleware.cli.annotations.Name;
-import com.taobao.middleware.cli.annotations.Option;
-import com.taobao.middleware.cli.annotations.Summary;
+import com.taobao.arthas.core.util.look.LookUtils;
+import com.taobao.middleware.cli.annotations.*;
 
 import java.io.File;
 import java.lang.instrument.Instrumentation;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Set;
-import java.util.Collection;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -62,6 +47,7 @@ public class JadCommand extends AnnotatedCommand {
     private boolean isRegEx = false;
     private boolean hideUnicode = false;
     private boolean lineNumber;
+    private boolean lookLocation = false;
 
     /**
      * jad output source code only
@@ -116,6 +102,12 @@ public class JadCommand extends AnnotatedCommand {
     @Description("Output source code contins line number, default value true")
     public void setLineNumber(boolean lineNumber) {
         this.lineNumber = lineNumber;
+    }
+
+    @Option(shortName = "L", longName = "LookLocation", flag = true)
+    @Description("Output the look location list, default value false")
+    public void setLookLocation(boolean lookLocation) {
+        this.lookLocation = lookLocation;
     }
 
     @Override
@@ -195,6 +187,17 @@ public class JadCommand extends AnnotatedCommand {
                 jadModel.setLocation(ClassUtils.getCodeSource(c.getProtectionDomain().getCodeSource()));
             }
             process.appendResult(jadModel);
+
+            if (lookLocation){
+                ClassNode classNode = AsmUtils.toClassNode(com.alibaba.bytekit.utils.FileUtils.readFileToByteArray(classFile));
+
+                List<com.alibaba.deps.org.objectweb.asm.tree.MethodNode> matchedMethods = new ArrayList<com.alibaba.deps.org.objectweb.asm.tree.MethodNode>();
+                for (MethodNode methodNode : classNode.methods) {
+                    if (methodNode.name.equals(methodName)){
+                        process.appendResult(new EchoModel(LookUtils.render(methodNode)));
+                    }
+                }
+            }
 
             affect.rCnt(classFiles.keySet().size());
             return ExitStatus.success();

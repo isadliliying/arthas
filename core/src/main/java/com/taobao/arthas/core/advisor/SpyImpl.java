@@ -73,14 +73,14 @@ public class SpyImpl extends AbstractSpy {
     }
 
     @Override
-    public void atLineBefore(Class<?> clazz, String methodInfo, Object target, Object[] args, int line, Object[] vars, String[] varNames) {
+    public void lookAfterLoc(Class<?> clazz, String methodInfo, Object target, Object[] args, String lookLoc, Object[] vars, String[] varNames) {
         ClassLoader classLoader = clazz.getClassLoader();
 
         String[] info = StringUtils.splitMethodInfo(methodInfo);
         String methodName = info[0];
         String methodDesc = info[1];
 
-        List<AdviceListener> listeners = AdviceListenerManager.queryLookAdviceListeners(classLoader, clazz.getName(), line,
+        List<AdviceListener> listeners = AdviceListenerManager.queryLookAdviceListeners(classLoader, clazz.getName(), lookLoc,
                 methodName, methodDesc);
         if (listeners != null) {
             for (AdviceListener adviceListener : listeners) {
@@ -88,7 +88,7 @@ public class SpyImpl extends AbstractSpy {
                     if (skipAdviceListener(adviceListener)) {
                         continue;
                     }
-                    adviceListener.beforeLine(clazz, methodName, methodDesc, target, args, line, vars, varNames);
+                    adviceListener.lookAfterLoc(clazz, methodName, methodDesc, target, args, lookLoc, vars, varNames);
                 } catch (Throwable e) {
                     logger.error("class: {}, methodInfo: {}", clazz.getName(), methodInfo, e);
                 }

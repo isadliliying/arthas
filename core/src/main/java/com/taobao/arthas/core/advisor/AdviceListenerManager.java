@@ -111,8 +111,8 @@ public class AdviceListenerManager {
             return className + owner + methodName + methodDesc;
         }
 
-        private String keyForLook(String className, int line, String methodName, String methodDesc) {
-            return className + line + methodName + methodDesc;
+        private String keyForLook(String className, String lookLoc, String methodName, String methodDesc) {
+            return className + lookLoc + methodName + methodDesc;
         }
 
         public void registerAdviceListener(String className, String methodName, String methodDesc,
@@ -167,11 +167,11 @@ public class AdviceListenerManager {
             return listeners;
         }
 
-        public void registerLookAdviceListener(String className, int line, String methodName, String methodDesc,
+        public void registerLookAdviceListener(String className, String lookLoc, String methodName, String methodDesc,
                                                AdviceListener listener) {
 
             className = className.replace('/', '.');
-            String key = keyForLook(className, line, methodName, methodDesc);
+            String key = keyForLook(className, lookLoc, methodName, methodDesc);
 
             List<AdviceListener> listeners = map.get(key);
             if (listeners == null) {
@@ -183,10 +183,10 @@ public class AdviceListenerManager {
             }
         }
 
-        public List<AdviceListener> queryLookAdviceListeners(String className, int line, String methodName,
+        public List<AdviceListener> queryLookAdviceListeners(String className, String lookLoc, String methodName,
                                                              String methodDesc) {
             className = className.replace('/', '.');
-            String key = keyForLook(className, line, methodName, methodDesc);
+            String key = keyForLook(className, lookLoc, methodName, methodDesc);
 
             List<AdviceListener> listeners = map.get(key);
 
@@ -240,7 +240,7 @@ public class AdviceListenerManager {
         manager.registerTraceAdviceListener(className, owner, methodName, methodDesc, listener);
     }
 
-    public static void registerLookAdviceListener(ClassLoader classLoader, String className, int line,
+    public static void registerLookAdviceListener(ClassLoader classLoader, String className, String lookLoc,
                                                    String methodName, String methodDesc, AdviceListener listener) {
         classLoader = wrap(classLoader);
         className = className.replace('/', '.');
@@ -251,7 +251,7 @@ public class AdviceListenerManager {
             manager = new ClassLoaderAdviceListenerManager();
             adviceListenerMap.put(classLoader, manager);
         }
-        manager.registerLookAdviceListener(className, line, methodName, methodDesc, listener);
+        manager.registerLookAdviceListener(className, lookLoc, methodName, methodDesc, listener);
     }
 
     public static List<AdviceListener> queryTraceAdviceListeners(ClassLoader classLoader, String className,
@@ -270,13 +270,13 @@ public class AdviceListenerManager {
 
 
     public static List<AdviceListener> queryLookAdviceListeners(ClassLoader classLoader, String className,
-                                                                int line, String methodName, String methodDesc) {
+                                                                String loolLoc, String methodName, String methodDesc) {
         classLoader = wrap(classLoader);
         className = className.replace('/', '.');
         ClassLoaderAdviceListenerManager manager = adviceListenerMap.get(classLoader);
 
         if (manager != null) {
-            return manager.queryLookAdviceListeners(className, line, methodName, methodDesc);
+            return manager.queryLookAdviceListeners(className, loolLoc, methodName, methodDesc);
         }
 
         return null;

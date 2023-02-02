@@ -11,9 +11,7 @@ import com.taobao.arthas.core.util.matcher.Matcher;
 import com.taobao.arthas.core.view.ObjectView;
 import com.taobao.middleware.cli.annotations.*;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 @Name("look")
 @Summary("Display the local variables, input parameter before specified line number")
@@ -40,7 +38,7 @@ public class LookCommand extends EnhancerCommand {
     private String classPattern;
     private String methodPattern;
     private String express;
-    private Integer lineNum;
+    private String lookLoc;
     private String conditionExpress;
     private Integer expand = 1;
     private Integer sizeLimit = 10 * 1024 * 1024;
@@ -59,10 +57,10 @@ public class LookCommand extends EnhancerCommand {
         this.methodPattern = methodPattern;
     }
 
-    @Argument(index = 2, argName = "lineNum")
-    @Description("The line number will be look before. -1 as method exit")
-    public void setLineNum(Integer lineNum) {
-        this.lineNum = lineNum;
+    @Argument(index = 2, argName = "look-location")
+    @Description("The look location will be look after. using jad to find look location!")
+    public void setLookLoc(String lookLoc) {
+        this.lookLoc = lookLoc;
     }
 
     @Argument(index = 3, argName = "express", required = false)
@@ -133,8 +131,8 @@ public class LookCommand extends EnhancerCommand {
         return numberOfLimit;
     }
 
-    public Integer getLineNum() {
-        return lineNum;
+    public String getLookLoc() {
+        return lookLoc;
     }
 
     @Override

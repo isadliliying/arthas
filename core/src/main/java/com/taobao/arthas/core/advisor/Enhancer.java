@@ -43,7 +43,6 @@ import com.alibaba.bytekit.asm.location.filter.InvokeContainLocationFilter;
 import com.alibaba.bytekit.asm.location.filter.LocationFilter;
 import com.alibaba.bytekit.utils.AsmOpUtils;
 import com.alibaba.bytekit.utils.AsmUtils;
-import com.alibaba.fastjson.util.ASMUtils;
 import com.taobao.arthas.common.Pair;
 import com.taobao.arthas.core.GlobalOptions;
 import com.taobao.arthas.core.advisor.SpyInterceptors.SpyInterceptor1;
@@ -56,10 +55,7 @@ import com.taobao.arthas.core.advisor.SpyInterceptors.SpyTraceInterceptor1;
 import com.taobao.arthas.core.advisor.SpyInterceptors.SpyTraceInterceptor2;
 import com.taobao.arthas.core.advisor.SpyInterceptors.SpyTraceInterceptor3;
 import com.taobao.arthas.core.server.ArthasBootstrap;
-import com.taobao.arthas.core.util.ArthasCheckUtils;
-import com.taobao.arthas.core.util.ClassUtils;
-import com.taobao.arthas.core.util.FileUtils;
-import com.taobao.arthas.core.util.SearchUtils;
+import com.taobao.arthas.core.util.*;
 import com.taobao.arthas.core.util.affect.EnhancerAffect;
 import com.taobao.arthas.core.util.matcher.Matcher;
 
@@ -74,7 +70,7 @@ public class Enhancer implements ClassFileTransformer {
     private final AdviceListener listener;
     private final boolean isTracing;
     private boolean isLooking;
-    private int lookingLineNum;
+    private String lookLoc;
     private final boolean skipJDKTrace;
     private final Matcher classNameMatcher;
     private final Matcher classNameExcludeMatcher;
@@ -143,10 +139,8 @@ public class Enhancer implements ClassFileTransformer {
             //收集 InterceptorProcessor
             final List<InterceptorProcessor> interceptorProcessors = new ArrayList<InterceptorProcessor>();
             if (this.isLooking) {
-                //注解解析的方式不方便按入参数变更lineNumber，所以手动创建了一下，理论上自己定义一个InterceptorClassParser也能做到
-                LineBeforeLocationMatcher locationMatcher = new LineBeforeLocationMatcher(lookingLineNum);
-                Method method = ReflectionUtils.findMethod(SpyInterceptors.SpyLookInterceptor.class, "atLineBefore",null);
-                InterceptorProcessor lookInterceptorProcessor = InterceptorParserUtils.createInterceptorProcessor(method, locationMatcher, true, None.class, Void.class);
+                //手动创建一个 InterceptorProcessor
+                InterceptorProcessor lookInterceptorProcessor = LookInterceptorParserUtils.createLookInterceptorProcessor(this.lookLoc);
                 interceptorProcessors.add(lookInterceptorProcessor);
             } else {
                 interceptorProcessors.addAll(defaultInterceptorClassParser.parse(SpyInterceptor1.class));
@@ -186,10 +180,10 @@ public class Enhancer implements ClassFileTransformer {
             if (isLooking) {
                 //当lookingLineNum>0,指定行的前面进行filter
                 LocationFilter lineBeforeFilter = new InvokeCheckLocationFilter(Type.getInternalName(SpyAPI.class),
-                        "atLineBefore", LocationType.LINE);
+                        "atLineBefore", LocationType.USER_DEFINE);
                 //lookingLineNum=-1,方法退出前进行filter
                 LocationFilter methodExistFilter = new InvokeCheckLocationFilter(Type.getInternalName(SpyAPI.class),
-                        "atLineBefore", LocationType.EXIT);
+                        "atLineBefore", LocationType.USER_DEFINE);
                 groupLocationFilter.addFilter(lineBeforeFilter);
                 groupLocationFilter.addFilter(methodExistFilter);
             } else {
@@ -228,7 +222,7 @@ public class Enhancer implements ClassFileTransformer {
                     continue;
                 }
 
-                // 先查找是否有 atBeforeInvoke 函数，如果有，则说明已经有trace了，则直接不再尝试增强，直接插入 listener
+                // 先查找是否有 atBeforeILnvoke 函数，如果有，则说明已经有trace了，则直接不再尝试增强，直接插入 listener
                 // 这里需要排除下look命令，因为即使进行了trace跟watch，look命令依旧需要增强
                 if (AsmUtils.containsMethodInsnNode(methodNode, Type.getInternalName(SpyAPI.class), "atBeforeInvoke") && !isLooking) {
                     for (AbstractInsnNode insnNode = methodNode.instructions.getFirst(); insnNode != null; insnNode = insnNode
@@ -273,7 +267,7 @@ public class Enhancer implements ClassFileTransformer {
                 if (isLooking){
                     if (matchLocationCount > 0){
                         AdviceListenerManager.registerLookAdviceListener(inClassLoader, className,
-                                this.lookingLineNum, methodNode.name, methodNode.desc, listener);
+                                this.lookLoc, methodNode.name, methodNode.desc, listener);
                         //需要加入行号嘛？
                         affect.addMethodAndCount(inClassLoader, className, methodNode.name, methodNode.desc);
                     }
@@ -322,12 +316,12 @@ public class Enhancer implements ClassFileTransformer {
         isLooking = looking;
     }
 
-    public int getLookingLineNum() {
-        return lookingLineNum;
+    public String getLookLoc() {
+        return lookLoc;
     }
 
-    public void setLookingLineNum(int lookingLineNum) {
-        this.lookingLineNum = lookingLineNum;
+    public void setLookLoc(String lookLoc) {
+        this.lookLoc = lookLoc;
     }
 
     /**

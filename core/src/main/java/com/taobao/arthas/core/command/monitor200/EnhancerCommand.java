@@ -161,9 +161,9 @@ public abstract class EnhancerCommand extends AnnotatedCommand {
 
             Enhancer enhancer = new Enhancer(listener, listener instanceof InvokeTraceable, skipJDKTrace, getClassNameMatcher(), getClassNameExcludeMatcher(), getMethodNameMatcher());
             if(listener instanceof LookAdviceListener) {
-                int lineNum = ((LookAdviceListener) listener).getCommand().getLineNum();
+                String lookLoc = ((LookAdviceListener) listener).getCommand().getLookLoc();
                 enhancer.setLooking(true);
-                enhancer.setLookingLineNum(lineNum);
+                enhancer.setLookLoc(lookLoc);
             }
 
             // 注册通知监听器

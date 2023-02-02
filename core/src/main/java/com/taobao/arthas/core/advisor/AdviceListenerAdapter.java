@@ -66,8 +66,8 @@ public abstract class AdviceListenerAdapter implements AdviceListener, ProcessAw
     }
 
     @Override
-    public void beforeLine(Class<?> clazz, String methodName, String methodDesc, Object target, Object[] args, int line, Object[] vars, String[] varNames) throws Throwable {
-        beforeLine(clazz.getClassLoader(), clazz, new ArthasMethod(clazz, methodName, methodDesc), target, args, line, vars, varNames);
+    public void lookAfterLoc(Class<?> clazz, String methodName, String methodDesc, Object target, Object[] args, String lookLoc, Object[] vars, String[] varNames) throws Throwable {
+        lookAfterLoc(clazz.getClassLoader(), clazz, new ArthasMethod(clazz, methodName, methodDesc), target, args, lookLoc, vars, varNames);
     }
 
     /**
@@ -125,7 +125,7 @@ public abstract class AdviceListenerAdapter implements AdviceListener, ProcessAw
      * @param varNames   本地变量名数组
      * @throws Throwable 通知过程出错
      */
-    public void beforeLine(ClassLoader loader, Class<?> clazz, ArthasMethod method, Object target, Object[] args, int line, Object[] vars, String[] varNames) throws Throwable{
+    public void lookAfterLoc(ClassLoader loader, Class<?> clazz, ArthasMethod method, Object target, Object[] args, String lookLoc, Object[] vars, String[] varNames) throws Throwable{
         //empty
     }
 

@@ -84,6 +84,6 @@ public interface AdviceListener {
      * @param varNames   本地变量名数组
      * @throws Throwable 通知过程出错
      */
-    void beforeLine(Class<?> clazz, String methodName, String methodDesc, Object target, Object[] args, int line, Object[] vars, String[] varNames) throws Throwable;
+    void lookAfterLoc(Class<?> clazz, String methodName, String methodDesc, Object target, Object[] args, String lookLoc, Object[] vars, String[] varNames) throws Throwable;
 
 }
