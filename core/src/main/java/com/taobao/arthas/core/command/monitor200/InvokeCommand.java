@@ -41,6 +41,8 @@ public class InvokeCommand extends AnnotatedCommand {
 
     private String libPath;
 
+    private String traceUid;
+
     @Argument(index = 0, argName = "class-name")
     @Description("The class name")
     public void setClassName(String className) {
@@ -80,6 +82,12 @@ public class InvokeCommand extends AnnotatedCommand {
         this.limit = limit;
     }
 
+    @Option(shortName = "t", longName = "traceUid")
+    @Description("Set the limit value of the getInstances action, default value is 10, set to -1 is unlimited")
+    public void setTraceUid(String traceUid) {
+        this.traceUid = traceUid;
+    }
+
     @Option(longName = "libPath")
     @Description("The specify lib path.")
     public void setLibPath(String path) {
@@ -93,17 +101,20 @@ public class InvokeCommand extends AnnotatedCommand {
         VmToolCommand vmToolCommand = new VmToolCommand();
         vmToolCommand.setAction(VmToolCommand.VmToolAction.getInstances);
         vmToolCommand.setClassName(this.className);
-        if (StringUtils.isBlank(classLoaderClass)){
+        if (StringUtils.isBlank(classLoaderClass)) {
             String defaultClassLoaderName = "org.springframework.boot.loader.LaunchedURLClassLoader";
             Instrumentation inst = process.session().getInstrumentation();
             List<ClassLoader> matchedClassLoaders = ClassLoaderUtils.getClassLoaderByClassName(inst, defaultClassLoaderName);
-            if (matchedClassLoaders == null || !matchedClassLoaders.isEmpty()){
+            if (matchedClassLoaders == null || !matchedClassLoaders.isEmpty()) {
                 vmToolCommand.setClassLoaderClass(defaultClassLoaderName);
             }
-        }else {
+        } else {
             vmToolCommand.setClassLoaderClass(this.classLoaderClass);
         }
-        String newExpress = "@java.lang.Thread@currentThread().setContextClassLoader(classLoader),"+express;
+        String newExpress = "@java.lang.Thread@currentThread().setContextClassLoader(classLoader)," + express;
+        if (!StringUtils.isBlank(traceUid)){
+            newExpress = "@com.seewo.honeycomb.log.LogContextHolder@setTraceId(\""+traceUid+"\"),"+newExpress;
+        }
         vmToolCommand.setExpress(newExpress);
         vmToolCommand.setExpand(this.expand);
         vmToolCommand.setHashCode(this.hashCode);
