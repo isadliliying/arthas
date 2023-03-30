@@ -103,7 +103,7 @@ public class InvokeCommand extends AnnotatedCommand {
         }else {
             vmToolCommand.setClassLoaderClass(this.classLoaderClass);
         }
-        String newExpress = "@java.lang.Thread@currentThread().setContextClassLoader(instances[0].class.getClassLoader()),"+express;
+        String newExpress = "@java.lang.Thread@currentThread().setContextClassLoader(classLoader),"+express;
         vmToolCommand.setExpress(newExpress);
         vmToolCommand.setExpand(this.expand);
         vmToolCommand.setHashCode(this.hashCode);
