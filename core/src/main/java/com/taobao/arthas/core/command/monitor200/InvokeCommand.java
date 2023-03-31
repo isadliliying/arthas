@@ -19,6 +19,7 @@ import java.util.List;
         + "  invoke demo.MathGame 'instances.length'\n"
         + "  invoke demo.MathGame demo.MathGame -x 2\n"
         + "  invoke demo.MathGame java.lang.String --limit 10\n"
+        + "  invoke demo.MathGame java.lang.String -t 123abcd\n"
         + Constants.WIKI + Constants.WIKI_HOME + "invoke")
 //@formatter:on
 public class InvokeCommand extends AnnotatedCommand {
@@ -83,7 +84,7 @@ public class InvokeCommand extends AnnotatedCommand {
     }
 
     @Option(shortName = "t", longName = "traceUid")
-    @Description("Set the limit value of the getInstances action, default value is 10, set to -1 is unlimited")
+    @Description("设置线程的traceUid，相当于@com.seewo.honeycomb.log.LogContextHolder@setTraceId(\"234325\")")
     public void setTraceUid(String traceUid) {
         this.traceUid = traceUid;
     }

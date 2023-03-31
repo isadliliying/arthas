@@ -15,10 +15,9 @@ import java.util.List;
 @Name("sql")
 @Summary("run a query sql and out put json result!")
 @Description(Constants.EXAMPLE
-        + "  invoke demo.MathGame 'instances[0]'\n"
-        + "  invoke demo.MathGame 'instances.length'\n"
-        + "  invoke demo.MathGame demo.MathGame -x 2\n"
-        + "  invoke demo.MathGame java.lang.String --limit 10\n"
+        + "  sql \"select * from t_device where machine_sn = 'abc' limit 1;\"  -f '/app/file.json''\n"
+        + "  sql \"update t_device set create_time='2023-01-01 22:22:22' where id=957\" -u'\n"
+        + "  sql \"delete from  t_device where id=1100\" -e\n"
         + Constants.WIKI + Constants.WIKI_HOME + "invoke")
 //@formatter:on
 public class SqlCommand extends AnnotatedCommand {
@@ -37,7 +36,7 @@ public class SqlCommand extends AnnotatedCommand {
     private Boolean isUpdate;
 
     @Argument(index = 0, argName = "sql", required = true)
-    @Description("sql.")
+    @Description("想要执行的sql")
     public void setExpress(String sql) {
         this.sql = sql;
     }
@@ -49,26 +48,26 @@ public class SqlCommand extends AnnotatedCommand {
     }
 
     @Option(longName = "fileName",shortName = "f")
-    @Description("The class name of the special class's classLoader.")
+    @Description("json输出的目标文件（不会自动创建文件夹）")
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
 
     @Option(longName = "instanceIndex",shortName = "i")
     @DefaultValue("0")
-    @Description("The class name of the special class's classLoader.")
+    @Description("兼容多datasource场景，手动指定第几个datasource，后续应该可以使用名字指定")
     public void setInstanceIndex(Integer instanceIndex) {
         this.instanceIndex = instanceIndex;
     }
 
     @Option(shortName = "e", longName = "execute", flag = true)
-    @Description("Watch before invocation")
+    @Description("使用execute执行sql")
     public void setExecute(boolean execute) {
         this.isExecute = execute;
     }
 
     @Option(shortName = "u", longName = "update", flag = true)
-    @Description("Watch before invocation")
+    @Description("使用update执行sql")
     public void setUpdate(boolean update) {
         this.isUpdate = update;
     }
