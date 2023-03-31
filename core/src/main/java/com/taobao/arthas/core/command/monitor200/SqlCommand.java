@@ -103,27 +103,27 @@ public class SqlCommand extends AnnotatedCommand {
         String newExpress = "";
         if (isUpdate){
             newExpress =
-                    "@java.lang.Thread@currentThread().setContextClassLoader(instances["+instanceIndex+"].class.getClassLoader()),"
+                    "@java.lang.Thread@currentThread().setContextClassLoader(classLoader),"
                             +"#list=instances["+instanceIndex+"].queryForList(\"explain "+transSql+"\"),"
                             + "#rows=#list[0][\"rows\"].longValue(),"
                             + "#rows > 100 ? \"effect rows is gt 100! do not allow to update!\" : instances["+instanceIndex+"].update(\""+transSql+"\")"
             ;
         }else if (isExecute){
             newExpress =
-                    "@java.lang.Thread@currentThread().setContextClassLoader(instances["+instanceIndex+"].class.getClassLoader()),"
+                    "@java.lang.Thread@currentThread().setContextClassLoader(classLoader),"
                             +"#list=instances["+instanceIndex+"].queryForList(\"explain "+transSql+"\"),"
                             + "#rows=#list[0][\"rows\"].longValue(),"
                             + "#rows > 100 ? \"effect rows is gt 100! do not allow to execute!\" : instances["+instanceIndex+"].execute(\""+transSql+"\")"
             ;
         }else {
             newExpress =
-                    "@java.lang.Thread@currentThread().setContextClassLoader(instances["+instanceIndex+"].class.getClassLoader()),"
+                    "@java.lang.Thread@currentThread().setContextClassLoader(classLoader),"
                             +"#list=instances["+instanceIndex+"].queryForList(\""+transSql+"\"),"
                             + "#list";
 
             if (!StringUtils.isBlank(fileName)){
                 newExpress =
-                        "@java.lang.Thread@currentThread().setContextClassLoader(instances["+instanceIndex+"].class.getClassLoader()),"
+                        "@java.lang.Thread@currentThread().setContextClassLoader(classLoader),"
                                 +"#list=instances["+instanceIndex+"].queryForList(\""+transSql+"\"),"
                                 + "#content=@com.alibaba.fastjson.JSON@toJSONString(#list),"
                                 + "#file=new java.io.File(\""+fileName+"\"),"
