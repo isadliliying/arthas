@@ -91,7 +91,7 @@ public class SqlCommand extends AnnotatedCommand {
             String defaultClassLoaderName = "org.springframework.boot.loader.LaunchedURLClassLoader";
             Instrumentation inst = process.session().getInstrumentation();
             List<ClassLoader> matchedClassLoaders = ClassLoaderUtils.getClassLoaderByClassName(inst, defaultClassLoaderName);
-            if (matchedClassLoaders == null || !matchedClassLoaders.isEmpty()){
+            if (matchedClassLoaders != null && !matchedClassLoaders.isEmpty()){
                 vmToolCommand.setClassLoaderClass(defaultClassLoaderName);
             }
         } else {

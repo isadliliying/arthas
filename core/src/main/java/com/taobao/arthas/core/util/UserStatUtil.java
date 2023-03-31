@@ -1,10 +1,12 @@
 package com.taobao.arthas.core.util;
 
+import com.taobao.arthas.core.command.express.Express;
+import com.taobao.arthas.core.command.express.ExpressFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
+import java.lang.instrument.Instrumentation;
+import java.net.*;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,10 +45,11 @@ public class UserStatUtil {
         statUrl = url;
     }
 
-    public static void arthasStart() {
+    public static void arthasStart(Instrumentation inst) {
         RemoteJob job = new RemoteJob();
+        job.appendQueryData("env", getEnv(inst));
+        job.appendQueryData("appid", getAppId(inst));
         job.appendQueryData("ip", ip);
-        job.appendQueryData("version", version);
         job.appendQueryData("command", "start");
 
         try {
@@ -56,10 +59,11 @@ public class UserStatUtil {
         }
     }
 
-    public static void arthasUsage(String cmd, String detail) {
+    public static void arthasUsage(String cmd, String detail, Instrumentation inst) {
         RemoteJob job = new RemoteJob();
+        job.appendQueryData("env", getEnv(inst));
+        job.appendQueryData("appid", getAppId(inst));
         job.appendQueryData("ip", ip);
-        job.appendQueryData("version", version);
         job.appendQueryData("command", URLEncoder.encode(cmd));
         if (detail != null) {
             job.appendQueryData("arguments", URLEncoder.encode(detail));
@@ -72,12 +76,55 @@ public class UserStatUtil {
         }
     }
 
-    public static void arthasUsageSuccess(String cmd, List<String> args) {
+    public static void arthasUsage(String cmd, List<String> args, Instrumentation inst) {
         StringBuilder commandString = new StringBuilder(cmd);
         for (String arg : args) {
             commandString.append(" ").append(arg);
         }
-        UserStatUtil.arthasUsage(cmd, commandString.toString());
+        UserStatUtil.arthasUsage(cmd, commandString.toString(),inst);
+    }
+
+    /**
+     * 获取环境
+     */
+    public static String getEnv(Instrumentation inst){
+        try {
+            ClassLoader classLoader = findSuitableClassLoader(inst);
+            Express unpooledExpress = ExpressFactory.unpooledExpress(classLoader);
+            String express = "@com.cvte.psd.foundation.Foundation@server().getEnvType()";
+            return unpooledExpress.get(express).toString();
+        }catch (Throwable t){
+            //ignore
+        }
+        return "";
+    }
+
+    public static ClassLoader findSuitableClassLoader(Instrumentation inst){
+        String defaultClassLoaderName = "org.springframework.boot.loader.LaunchedURLClassLoader";
+        String backupClassLoaderName = "jdk.internal.loader.ClassLoaders$AppClassLoader";
+        List<ClassLoader> defaultClassLoaders = ClassLoaderUtils.getClassLoaderByClassName(inst, defaultClassLoaderName);
+        List<ClassLoader> backupClassLoaders = ClassLoaderUtils.getClassLoaderByClassName(inst, backupClassLoaderName);
+        defaultClassLoaders.addAll(backupClassLoaders);
+
+        if (defaultClassLoaders.isEmpty()){
+            return null;
+        }
+        return defaultClassLoaders.get(0);
+    }
+
+    /**
+     * 获取appId
+      */
+    public static String getAppId(Instrumentation inst){
+        try {
+            ClassLoader classLoader = findSuitableClassLoader(inst);
+            Express unpooledExpress = ExpressFactory.unpooledExpress(classLoader);
+            String express = "@com.cvte.psd.foundation.Foundation@app().getAppId()";
+            return unpooledExpress.get(express).toString();
+        }catch (Throwable t){
+            //ignore
+        }
+        return "";
     }
 
     public static void destroy() {

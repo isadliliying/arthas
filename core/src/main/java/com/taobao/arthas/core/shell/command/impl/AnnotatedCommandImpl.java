@@ -71,6 +71,8 @@ public class AnnotatedCommandImpl extends Command {
     }
 
     private void process(CommandProcess process) {
+        UserStatUtil.arthasUsage(name(), process.args(),process.session().getInstrumentation());
+
         AnnotatedCommand instance;
         try {
             instance = clazz.newInstance();
@@ -80,7 +82,6 @@ public class AnnotatedCommandImpl extends Command {
         }
         CLIConfigurator.inject(process.commandLine(), instance);
         instance.process(process);
-        UserStatUtil.arthasUsageSuccess(name(), process.args());
     }
 
     @Override

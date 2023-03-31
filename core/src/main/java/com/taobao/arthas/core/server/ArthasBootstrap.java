@@ -461,7 +461,7 @@ public class ArthasBootstrap {
                 logger().info("arthas stat url: {}", configure.getStatUrl());
             }
             UserStatUtil.setStatUrl(configure.getStatUrl());
-            UserStatUtil.arthasStart();
+            UserStatUtil.arthasStart(instrumentation);
 
             try {
                 SpyAPI.init();
