@@ -1,6 +1,9 @@
 package com.taobao.arthas.core.command.monitor200;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 import com.taobao.arthas.core.GlobalOptions;
 import com.taobao.arthas.core.advisor.AdviceListener;
@@ -18,6 +21,7 @@ import com.taobao.middleware.cli.annotations.Description;
 import com.taobao.middleware.cli.annotations.Name;
 import com.taobao.middleware.cli.annotations.Option;
 import com.taobao.middleware.cli.annotations.Summary;
+import org.benf.cfr.reader.util.collections.CollectionUtils;
 
 @Name("watch")
 @Summary("Display the input/output parameter, return object, and thrown exception of specified method invocation")
@@ -40,6 +44,7 @@ public class WatchCommand extends EnhancerCommand {
     private String express;
     private String conditionExpress;
     private String traceUid;
+    private String userUid;
     private boolean isBefore = false;
     private boolean isFinish = false;
     private boolean isException = false;
@@ -128,6 +133,12 @@ public class WatchCommand extends EnhancerCommand {
         this.traceUid = traceUid;
     }
 
+    @Option(shortName = "u", longName = "userUid")
+    @Description("在原条件上增加userUid条件，相当于加了 @com.seewo.honeycomb.log.LogContextHolder@get().userId.equals(\"13432432\")")
+    public void setUserUid(String userUid) {
+        this.userUid = userUid;
+    }
+
     public String getClassPattern() {
         return classPattern;
     }
@@ -141,13 +152,17 @@ public class WatchCommand extends EnhancerCommand {
     }
 
     public String getConditionExpress() {
+        LinkedList<String> conditionList = new LinkedList<String>();
         if (!StringUtils.isBlank(traceUid)){
-            if (!StringUtils.isBlank(conditionExpress)) {
-                return "@com.seewo.honeycomb.log.LogContextHolder@get().traceId.equals(\"" + traceUid + "\") && " + conditionExpress;
-            }
-            return "@com.seewo.honeycomb.log.LogContextHolder@get().traceId.equals(\"" + traceUid + "\")";
+            conditionList.add("@com.seewo.honeycomb.log.LogContextHolder@get().traceId.equals(\"" + traceUid + "\")");
         }
-        return conditionExpress;
+        if (!StringUtils.isBlank(userUid)){
+            conditionList.add("@com.seewo.honeycomb.log.LogContextHolder@get().userId.equals(\"" + userUid + "\")");
+        }
+        if (!StringUtils.isBlank(conditionExpress)){
+            conditionList.add(conditionExpress);
+        }
+        return CollectionUtils.join(conditionList,"&&");
     }
 
     public boolean isBefore() {

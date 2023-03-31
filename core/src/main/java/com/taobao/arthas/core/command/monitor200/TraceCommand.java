@@ -17,8 +17,10 @@ import com.taobao.middleware.cli.annotations.Description;
 import com.taobao.middleware.cli.annotations.Name;
 import com.taobao.middleware.cli.annotations.Option;
 import com.taobao.middleware.cli.annotations.Summary;
+import org.benf.cfr.reader.util.collections.CollectionUtils;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -54,6 +56,7 @@ public class TraceCommand extends EnhancerCommand {
     private List<String> pathPatterns;
     private boolean skipJDKTrace;
     private String traceUid;
+    private String userUid;
 
     @Argument(argName = "class-pattern", index = 0)
     @Description("Class name pattern, use either '.' or '/' as separator")
@@ -104,6 +107,12 @@ public class TraceCommand extends EnhancerCommand {
         this.traceUid = traceUid;
     }
 
+    @Option(shortName = "u", longName = "userUid")
+    @Description("在原条件上增加userUid条件，相当于加了 @com.seewo.honeycomb.log.LogContextHolder@get().userId.equals(\"13432432\")")
+    public void setUserUid(String userUid) {
+        this.userUid = userUid;
+    }
+
     public String getClassPattern() {
         return classPattern;
     }
@@ -113,13 +122,17 @@ public class TraceCommand extends EnhancerCommand {
     }
 
     public String getConditionExpress() {
+        LinkedList<String> conditionList = new LinkedList<String>();
         if (!StringUtils.isBlank(traceUid)){
-            if (!StringUtils.isBlank(conditionExpress)) {
-                return "@com.seewo.honeycomb.log.LogContextHolder@get().traceId.equals(\"" + traceUid + "\") && " + conditionExpress;
-            }
-            return "@com.seewo.honeycomb.log.LogContextHolder@get().traceId.equals(\"" + traceUid + "\")";
+            conditionList.add("@com.seewo.honeycomb.log.LogContextHolder@get().traceId.equals(\"" + traceUid + "\")");
         }
-        return conditionExpress;
+        if (!StringUtils.isBlank(userUid)){
+            conditionList.add("@com.seewo.honeycomb.log.LogContextHolder@get().userId.equals(\"" + userUid + "\")");
+        }
+        if (!StringUtils.isBlank(conditionExpress)){
+            conditionList.add(conditionExpress);
+        }
+        return CollectionUtils.join(conditionList,"&&");
     }
 
     public boolean isSkipJDKTrace() {

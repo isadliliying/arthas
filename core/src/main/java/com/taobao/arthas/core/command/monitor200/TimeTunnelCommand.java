@@ -27,12 +27,9 @@ import com.taobao.middleware.cli.annotations.Name;
 import com.taobao.middleware.cli.annotations.Option;
 import com.taobao.middleware.cli.annotations.Summary;
 import com.taobao.middleware.cli.annotations.Argument;
+import org.benf.cfr.reader.util.collections.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Integer.toHexString;
@@ -88,6 +85,7 @@ public class TimeTunnelCommand extends EnhancerCommand {
     private int numberOfLimit = 100;
     private int replayTimes = 1;
     private long replayInterval = 1000L;
+    private String userUid;
     private static final Logger logger = LoggerFactory.getLogger(TimeTunnelCommand.class);
 
     @Argument(index = 0, argName = "class-pattern", required = false)
@@ -194,6 +192,11 @@ public class TimeTunnelCommand extends EnhancerCommand {
         this.replayInterval = replayInterval;
     }
 
+    @Option(shortName = "u", longName = "userUid")
+    @Description("在原条件上增加userUid条件，相当于加了 @com.seewo.honeycomb.log.LogContextHolder@get().userId.equals(\"13432432\")")
+    public void setUserUid(String userUid) {
+        this.userUid = userUid;
+    }
 
     public boolean isRegEx() {
         return isRegEx;
@@ -208,7 +211,14 @@ public class TimeTunnelCommand extends EnhancerCommand {
     }
 
     public String getConditionExpress() {
-        return conditionExpress;
+        LinkedList<String> conditionList = new LinkedList<String>();
+        if (!StringUtils.isBlank(userUid)){
+            conditionList.add("@com.seewo.honeycomb.log.LogContextHolder@get().userId.equals(\"" + userUid + "\")");
+        }
+        if (!StringUtils.isBlank(conditionExpress)){
+            conditionList.add(conditionExpress);
+        }
+        return CollectionUtils.join(conditionList,"&&");
     }
 
     public int getNumberOfLimit() {
