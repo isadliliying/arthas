@@ -5,6 +5,7 @@ import com.taobao.arthas.core.advisor.AdviceListener;
 import com.taobao.arthas.core.command.Constants;
 import com.taobao.arthas.core.shell.command.CommandProcess;
 import com.taobao.arthas.core.util.SearchUtils;
+import com.taobao.arthas.core.util.StringUtils;
 import com.taobao.arthas.core.util.matcher.GroupMatcher;
 import com.taobao.arthas.core.util.matcher.Matcher;
 import com.taobao.arthas.core.util.matcher.RegexMatcher;
@@ -51,6 +52,7 @@ public class TraceCommand extends EnhancerCommand {
     private int numberOfLimit = 100;
     private List<String> pathPatterns;
     private boolean skipJDKTrace;
+    private String traceUid;
 
     @Argument(argName = "class-pattern", index = 0)
     @Description("Class name pattern, use either '.' or '/' as separator")
@@ -95,6 +97,12 @@ public class TraceCommand extends EnhancerCommand {
         this.skipJDKTrace = skipJDKTrace;
     }
 
+    @Option(shortName = "t", longName = "traceUid")
+    @Description("在原条件上增加traceUid条件，相当于加了 @com.seewo.honeycomb.log.LogContextHolder@get().traceId.equals(\"13432432\")")
+    public void setTraceUid(String traceUid) {
+        this.traceUid = traceUid;
+    }
+
     public String getClassPattern() {
         return classPattern;
     }
@@ -104,6 +112,12 @@ public class TraceCommand extends EnhancerCommand {
     }
 
     public String getConditionExpress() {
+        if (!StringUtils.isBlank(traceUid)){
+            if (!StringUtils.isBlank(conditionExpress)) {
+                return "@com.seewo.honeycomb.log.LogContextHolder@get().traceId.equals(\"" + traceUid + "\") && " + conditionExpress;
+            }
+            return "@com.seewo.honeycomb.log.LogContextHolder@get().traceId.equals(\"" + traceUid + "\")";
+        }
         return conditionExpress;
     }
 

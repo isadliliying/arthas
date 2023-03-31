@@ -9,6 +9,7 @@ import com.taobao.arthas.core.shell.cli.Completion;
 import com.taobao.arthas.core.shell.cli.CompletionUtils;
 import com.taobao.arthas.core.shell.command.CommandProcess;
 import com.taobao.arthas.core.util.SearchUtils;
+import com.taobao.arthas.core.util.StringUtils;
 import com.taobao.arthas.core.util.matcher.Matcher;
 import com.taobao.arthas.core.view.ObjectView;
 import com.taobao.middleware.cli.annotations.Argument;
@@ -37,6 +38,7 @@ public class WatchCommand extends EnhancerCommand {
     private String methodPattern;
     private String express;
     private String conditionExpress;
+    private String traceUid;
     private boolean isBefore = false;
     private boolean isFinish = false;
     private boolean isException = false;
@@ -119,6 +121,12 @@ public class WatchCommand extends EnhancerCommand {
         this.numberOfLimit = numberOfLimit;
     }
 
+    @Option(shortName = "t", longName = "traceUid")
+    @Description("在原条件上增加traceUid条件，相当于加了 @com.seewo.honeycomb.log.LogContextHolder@get().traceId.equals(\"13432432\")")
+    public void setTraceUid(String traceUid) {
+        this.traceUid = traceUid;
+    }
+
     public String getClassPattern() {
         return classPattern;
     }
@@ -132,6 +140,12 @@ public class WatchCommand extends EnhancerCommand {
     }
 
     public String getConditionExpress() {
+        if (!StringUtils.isBlank(traceUid)){
+            if (!StringUtils.isBlank(conditionExpress)) {
+                return "@com.seewo.honeycomb.log.LogContextHolder@get().traceId.equals(\"" + traceUid + "\") && " + conditionExpress;
+            }
+            return "@com.seewo.honeycomb.log.LogContextHolder@get().traceId.equals(\"" + traceUid + "\")";
+        }
         return conditionExpress;
     }
 
