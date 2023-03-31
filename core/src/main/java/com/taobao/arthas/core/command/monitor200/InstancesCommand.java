@@ -12,18 +12,18 @@ import com.taobao.middleware.cli.annotations.*;
 import java.lang.instrument.Instrumentation;
 import java.util.List;
 
-@Name("invoke")
+@Name("instances")
 @Summary("replace vmtool --action getInstances --className org.springframework.context.ApplicationContext")
 @Description(Constants.EXAMPLE
-        + "  invoke demo.MathGame 'instances[0]'\n"
-        + "  invoke demo.MathGame 'instances.length'\n"
-        + "  invoke demo.MathGame demo.MathGame -x 2\n"
-        + "  invoke demo.MathGame java.lang.String --limit 10\n"
-        + "  invoke demo.MathGame java.lang.String -t 123abcd\n"
-        + Constants.WIKI + Constants.WIKI_HOME + "invoke")
+        + "  instances demo.MathGame 'instances[0]'\n"
+        + "  instances demo.MathGame 'instances.length'\n"
+        + "  instances demo.MathGame demo.MathGame -x 2\n"
+        + "  instances demo.MathGame java.lang.String --limit 10\n"
+        + "  instances demo.MathGame java.lang.String -t 123abcd\n"
+        + Constants.WIKI + Constants.WIKI_HOME + "instances")
 //@formatter:on
-public class InvokeCommand extends AnnotatedCommand {
-    private static final Logger logger = LoggerFactory.getLogger(InvokeCommand.class);
+public class InstancesCommand extends AnnotatedCommand {
+    private static final Logger logger = LoggerFactory.getLogger(InstancesCommand.class);
 
     private String className;
     private String express;
