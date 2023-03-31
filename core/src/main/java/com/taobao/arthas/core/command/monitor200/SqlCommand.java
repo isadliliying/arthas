@@ -7,6 +7,7 @@ import com.taobao.arthas.core.shell.command.AnnotatedCommand;
 import com.taobao.arthas.core.shell.command.CommandProcess;
 import com.taobao.arthas.core.util.ClassLoaderUtils;
 import com.taobao.arthas.core.util.StringUtils;
+import com.taobao.arthas.core.view.ObjectView;
 import com.taobao.middleware.cli.annotations.*;
 
 import java.lang.instrument.Instrumentation;
@@ -34,6 +35,8 @@ public class SqlCommand extends AnnotatedCommand {
     private Boolean isExecute;
 
     private Boolean isUpdate;
+
+    private Integer expand = 1;
 
     @Argument(index = 0, argName = "sql", required = true)
     @Description("想要执行的sql")
@@ -72,6 +75,11 @@ public class SqlCommand extends AnnotatedCommand {
         this.isUpdate = update;
     }
 
+    @Option(shortName = "x", longName = "expand")
+    @Description("Expand level of object (1 by default), the max value is " + ObjectView.MAX_DEEP)
+    public void setExpand(Integer expand) {
+        this.expand = expand;
+    }
 
     @Override
     public void process(final CommandProcess process) {
@@ -111,7 +119,7 @@ public class SqlCommand extends AnnotatedCommand {
             newExpress =
                     "@java.lang.Thread@currentThread().setContextClassLoader(instances["+instanceIndex+"].class.getClassLoader()),"
                             +"#list=instances["+instanceIndex+"].queryForList(\""+transSql+"\"),"
-                            + "@com.alibaba.fastjson.JSON@toJSONString(#list)";
+                            + "#list";
 
             if (!StringUtils.isBlank(fileName)){
                 newExpress =
@@ -129,7 +137,7 @@ public class SqlCommand extends AnnotatedCommand {
         }
 
         vmToolCommand.setExpress(newExpress);
-        vmToolCommand.setExpand(1);
+        vmToolCommand.setExpand(expand);
         vmToolCommand.setLimit(1);
         vmToolCommand.process(process);
     }
