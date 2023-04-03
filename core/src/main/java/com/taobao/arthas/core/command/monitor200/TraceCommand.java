@@ -52,6 +52,8 @@ public class TraceCommand extends EnhancerCommand {
     private String methodPattern;
     private String conditionExpress;
     private boolean isRegEx = false;
+
+    private boolean isShowBefore = false;
     private int numberOfLimit = 100;
     private List<String> pathPatterns;
     private boolean skipJDKTrace;
@@ -111,6 +113,16 @@ public class TraceCommand extends EnhancerCommand {
     @Description("在原条件上增加userUid条件，相当于加了 @com.seewo.honeycomb.log.LogContextHolder@get().userId.equals(\"13432432\")")
     public void setUserUid(String userUid) {
         this.userUid = userUid;
+    }
+
+    @Option(shortName = "b", longName = "show-before", flag = true)
+    @Description("在每个调用前输出")
+    public void setShowBefore(boolean isShowBefore) {
+        this.isShowBefore = isShowBefore;
+    }
+
+    public boolean isShowBefore() {
+        return isShowBefore;
     }
 
     public String getClassPattern() {

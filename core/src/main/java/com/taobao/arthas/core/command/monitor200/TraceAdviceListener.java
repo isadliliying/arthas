@@ -22,6 +22,9 @@ public class TraceAdviceListener extends AbstractTraceAdviceListener implements 
     @Override
     public void invokeBeforeTracing(ClassLoader classLoader, String tracingClassName, String tracingMethodName, String tracingMethodDesc, int tracingLineNumber)
             throws Throwable {
+        if (this.command.isShowBefore()) {
+            process.write(String.format("[%s] [before] %s:%s() #%s\n", System.currentTimeMillis(),tracingClassName.replace("/","."), tracingMethodName, tracingLineNumber));
+        }
         // normalize className later
         threadLocalTraceEntity(classLoader).tree.begin(tracingClassName, tracingMethodName, tracingLineNumber, true);
     }
@@ -29,12 +32,18 @@ public class TraceAdviceListener extends AbstractTraceAdviceListener implements 
     @Override
     public void invokeAfterTracing(ClassLoader classLoader, String tracingClassName, String tracingMethodName, String tracingMethodDesc, int tracingLineNumber)
             throws Throwable {
+        if (this.command.isShowBefore()) {
+            process.write(String.format("[%s] [after] %s:%s() #%s\n", System.currentTimeMillis(),tracingClassName.replace("/","."), tracingMethodName, tracingLineNumber));
+        }
         threadLocalTraceEntity(classLoader).tree.end();
     }
 
     @Override
     public void invokeThrowTracing(ClassLoader classLoader, String tracingClassName, String tracingMethodName, String tracingMethodDesc, int tracingLineNumber)
             throws Throwable {
+        if (this.command.isShowBefore()) {
+            process.write(String.format("[%s] [exception] %s:%s() #%s\n", System.currentTimeMillis(),tracingClassName.replace("/","."), tracingMethodName, tracingLineNumber));
+        }
         threadLocalTraceEntity(classLoader).tree.end(true);
     }
 
