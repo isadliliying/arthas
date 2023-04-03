@@ -117,7 +117,7 @@ public class TraceCommand extends EnhancerCommand {
     }
 
     @Option(shortName = "b", longName = "show-before", flag = true)
-    @Description("在每个调用前输出")
+    @Description("在每个子调用前后进行输出")
     public void setShowBefore(boolean isShowBefore) {
         this.isShowBefore = isShowBefore;
     }
