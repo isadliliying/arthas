@@ -35,6 +35,7 @@ import java.util.List;
 @Description(value = Constants.EXPRESS_DESCRIPTION + Constants.EXAMPLE +
         "  trace org.apache.commons.lang.StringUtils isBlank\n" +
         "  trace org.apache.commons.lang.StringUtils isBlank -t 123abc\n" +
+        "  trace org.apache.commons.lang.StringUtils isBlank -b\n" +
         "  trace *StringUtils isBlank\n" +
         "  trace *StringUtils isBlank params[0].length==1\n" +
         "  trace *StringUtils isBlank '#cost>100'\n" +
