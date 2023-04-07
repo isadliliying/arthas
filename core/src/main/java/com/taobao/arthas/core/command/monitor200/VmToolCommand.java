@@ -209,7 +209,7 @@ public class VmToolCommand extends AnnotatedCommand {
                     if (express != null) {
                         Express unpooledExpress = ExpressFactory.unpooledExpress(classLoader);
                         try {
-                            value = unpooledExpress.bind(new InstancesWrapper(instances, classLoader)).get(express);
+                            value = unpooledExpress.bind(new InstancesWrapper(instances, instances, classLoader)).get(express);
                         } catch (ExpressException e) {
                             logger.warn("ognl: failed execute express: " + express, e);
                             process.end(-1, "Failed to execute ognl, exception message: " + e.getMessage()
@@ -238,11 +238,22 @@ public class VmToolCommand extends AnnotatedCommand {
     static class InstancesWrapper {
         Object instances;
 
+        Object ins;
+
         Object classLoader;
 
-        public InstancesWrapper(Object instances,Object classLoader) {
+        public InstancesWrapper(Object instances,Object ins,Object classLoader) {
             this.instances = instances;
+            this.ins = ins;
             this.classLoader = classLoader;
+        }
+
+        public Object getIns() {
+            return ins;
+        }
+
+        public void setIns(Object ins) {
+            this.ins = ins;
         }
 
         public Object getInstances() {
