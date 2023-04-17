@@ -1,0 +1,220 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>arthas-all</artifactId>
+        <groupId>com.taobao.arthas</groupId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>plugin-recorder</artifactId>
+    <name>plugin-recorder</name>
+    <url>https://github.com/alibaba/arthas</url>
+
+    <properties>
+        <arthas.deps.package>com.alibaba.arthas.deps</arthas.deps.package>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id> jfrog-virtual</id>
+            <name>artifactory-releases</name>
+            <url>https://artifactory.gz.cvte.cn/artifactory/SR_maven_virtual/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
+
+        <repository>
+            <id> jfrog-snapshots</id>
+            <name>artifactory-snapshots</name>
+            <url>https://artifactory.gz.cvte.cn/artifactory/SR_maven_snapshots_local/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
+
+        <repository>
+            <id> nexus</id>
+            <name>nexus</name>
+            <url>http://mvn.gz.cvte.cn/nexus/content/groups/public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
+
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>dubbo</artifactId>
+            <version>2.6.3</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>spring-context</artifactId>
+                    <groupId>org.springframework</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.seewo.honeycomb</groupId>
+            <artifactId>honeycomb-log-core</artifactId>
+            <version>1.5</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+            <version>8.5.34</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.68</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.25</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.8.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>19.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>plugin-recorder</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                    <encoding>UTF-8</encoding>
+                    <showDeprecation>true</showDeprecation>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>plugin-recorder-shade</finalName>
+                            <transformers>
+<!--                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">-->
+<!--                                    <mainClass>com.taobao.arthas.core.Arthas</mainClass>-->
+<!--                                    <manifestEntries>-->
+<!--                                        <Created-By>core engine team, middleware group, alibaba inc.</Created-By>-->
+<!--                                        <Implementation-Version>${project.version}</Implementation-Version>-->
+<!--                                        <Implementation-Vendor-Id>com.taobao.arthas</Implementation-Vendor-Id>-->
+<!--                                        <Specification-Version>${project.version}</Specification-Version>-->
+<!--                                        <Specification-Title>arthas-core</Specification-Title>-->
+<!--                                    </manifestEntries>-->
+<!--                                </transformer>-->
+                            </transformers>
+                            <relocations>
+                                <!-- https://github.com/hengyunabc/arthas-repackage-deps -->
+                                <relocation>
+                                    <!-- 源包名 -->
+                                    <pattern>com.google</pattern>
+                                    <!-- 目的包名 -->
+                                    <shadedPattern>shaded.com.google</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <!-- 源包名 -->
+                                    <pattern>org.apache.commons.lang3</pattern>
+                                    <!-- 目的包名 -->
+                                    <shadedPattern>shaded.org.apache.commons.lang3</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <!-- 源包名 -->
+                                    <pattern>com.alibaba.fastjson</pattern>
+                                    <!-- 目的包名 -->
+                                    <shadedPattern>shaded.com.alibaba.fastjson</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <!-- 源包名 -->
+                                    <pattern>org.slf4j</pattern>
+                                    <!-- 目的包名 -->
+                                    <shadedPattern>shaded.org.slf4j</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <filters>
+<!--                                <filter>-->
+<!--                                    <artifact>com.alibaba.middleware:termd-core</artifact>-->
+<!--                                    <excludes>-->
+<!--                                        <exclude>io/termd/core/http/*.js</exclude>-->
+<!--                                        <exclude>io/termd/core/http/*.css</exclude>-->
+<!--                                        <exclude>io/termd/core/http/*.html</exclude>-->
+<!--                                        <exclude>io/termd/core/http/*.png</exclude>-->
+<!--                                    </excludes>-->
+<!--                                </filter>-->
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 把原来的logger command相关类还原，因为被shade plugin relocation修改了package -->
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <configuration>
+<!--                            <tasks>-->
+<!--                                <unzip src="${project.build.directory}/${project.build.finalName}-shade.${project.packaging}" dest="${project.build.directory}/tmp_out" />-->
+<!--                                <copy overwrite="true" todir="${project.build.directory}/tmp_out/com/taobao/arthas/core/command/logger">-->
+<!--                                    <fileset dir="${project.build.directory}/classes/com/taobao/arthas/core/command/logger" />-->
+<!--                                </copy>-->
+<!--                                &lt;!&ndash; 从web-ui复制打包好的js/html &ndash;&gt;-->
+<!--                                <copy overwrite="true" todir="${project.build.directory}/tmp_out/com/taobao/arthas/core/http/">-->
+<!--                                    <fileset dir="${project.build.directory}/../../web-ui/arthasWebConsole/dist/ui/" />-->
+<!--                                </copy>-->
+<!--                                <zip basedir="${project.build.directory}/tmp_out" destfile="${project.build.directory}/${project.build.finalName}-shade.${project.packaging}" />-->
+<!--                            </tasks>-->
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

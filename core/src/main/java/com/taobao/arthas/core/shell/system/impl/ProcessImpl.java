@@ -5,8 +5,10 @@ import com.alibaba.arthas.deps.org.slf4j.LoggerFactory;
 import com.taobao.arthas.core.advisor.AdviceListener;
 import com.taobao.arthas.core.advisor.AdviceWeaver;
 import com.taobao.arthas.core.command.basic1000.HelpCommand;
+import com.taobao.arthas.core.command.model.RecorderModel;
 import com.taobao.arthas.core.command.model.ResultModel;
 import com.taobao.arthas.core.command.model.StatusModel;
+import com.taobao.arthas.core.command.model.WatchModel;
 import com.taobao.arthas.core.distribution.ResultDistributor;
 import com.taobao.arthas.core.distribution.impl.TermResultDistributorImpl;
 import com.taobao.arthas.core.server.ArthasBootstrap;
@@ -247,6 +249,14 @@ public class ProcessImpl implements Process {
 
     private synchronized boolean terminate(int exitCode, Handler<Void> completionHandler, String message) {
         if (processStatus != ExecStatus.TERMINATED) {
+            if (process.hasIgnoreEnd) {
+                if (exitCode == 0) {
+                    this.appendResult(new RecorderModel(String.format("receive end code:%s msg:%s", exitCode, message)));
+                    return false;
+                } else {
+                    this.appendResult(new RecorderModel(String.format("receive end code:%s msg:%s", exitCode, message)));
+                }
+            }
             //add status message
             this.appendResult(new StatusModel(exitCode, message));
             if (process != null) {
@@ -386,7 +396,7 @@ public class ProcessImpl implements Process {
             } catch (Throwable t) {
                 logger.error("Error during processing the command:", t);
                 process.end(1, "Error during processing the command: " + t.getClass().getName() + ", message:" + t.getMessage()
-                        + ", please check $HOME/logs/arthas/arthas.log for more details." );
+                        + ", please check $HOME/logs/arthas/arthas.log for more details.");
             }
         }
     }
@@ -401,9 +411,21 @@ public class ProcessImpl implements Process {
         private AdviceListener listener = null;
         private ClassFileTransformer transformer;
 
+        private boolean hasIgnoreEnd = false;
+
+        private boolean justShowRecorderView = false;
+
         public CommandProcessImpl(Process process, Tty tty) {
             this.process = process;
             this.tty = tty;
+        }
+
+        public boolean isHasIgnoreEnd() {
+            return hasIgnoreEnd;
+        }
+
+        public void setHasIgnoreEnd(boolean hasIgnoreEnd) {
+            this.hasIgnoreEnd = hasIgnoreEnd;
         }
 
         @Override
@@ -497,6 +519,22 @@ public class ProcessImpl implements Process {
             return this;
         }
 
+        /**
+         * 忽略end
+         */
+        @Override
+        public void ignoreEnd() {
+            this.hasIgnoreEnd = true;
+        }
+
+        /**
+         * 恢复end
+         */
+        @Override
+        public void resumeEnd() {
+            this.hasIgnoreEnd = false;
+        }
+
         @Override
         public CommandProcess interruptHandler(Handler<Void> handler) {
             synchronized (ProcessImpl.this) {
@@ -550,13 +588,13 @@ public class ProcessImpl implements Process {
             if (adviceListener instanceof ProcessAware) {
                 ProcessAware processAware = (ProcessAware) adviceListener;
                 // listener 有可能是其它 command 创建的
-                if(processAware.getProcess() == null) {
+                if (processAware.getProcess() == null) {
                     processAware.setProcess(this.process);
                 }
             }
             this.listener = adviceListener;
             AdviceWeaver.reg(listener);
-            
+
             this.transformer = transformer;
         }
 
@@ -565,7 +603,7 @@ public class ProcessImpl implements Process {
             if (transformer != null) {
                 ArthasBootstrap.getInstance().getTransformerManager().removeTransformer(transformer);
             }
-            
+
             if (listener instanceof ProcessAware) {
                 // listener有可能其它 command 创建的，所以不能unRge
                 if (this.process.equals(((ProcessAware) listener).getProcess())) {
@@ -613,11 +651,24 @@ public class ProcessImpl implements Process {
 
         @Override
         public void appendResult(ResultModel result) {
+            if (justShowRecorderView && !(result instanceof RecorderModel)) {
+                return;
+            }
             if (processStatus != ExecStatus.RUNNING) {
                 throw new IllegalStateException(
                         "Cannot write to standard output when " + status().name().toLowerCase());
             }
             ProcessImpl.this.appendResult(result);
+        }
+
+        /**
+         * 仅开放 RecorderView 的输出
+         *
+         * @param justShowRecorderView
+         */
+        @Override
+        public void justShowRecorderView(boolean justShowRecorderView) {
+            this.justShowRecorderView = justShowRecorderView;
         }
     }
 

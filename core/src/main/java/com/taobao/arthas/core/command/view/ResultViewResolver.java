@@ -83,6 +83,8 @@ public class ResultViewResolver {
             registerView(JFRView.class);
             registerView(LookView.class);
 
+            registerView(RecorderView.class);
+
         } catch (Throwable e) {
             logger.error("register result view failed", e);
         }

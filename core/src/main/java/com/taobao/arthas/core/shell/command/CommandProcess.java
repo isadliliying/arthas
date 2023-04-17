@@ -109,6 +109,16 @@ public interface CommandProcess extends Tty {
     CommandProcess resizehandler(Handler<Void> handler);
 
     /**
+     * 忽略end
+     */
+    void ignoreEnd();
+
+    /**
+     * 恢复end
+     */
+    void resumeEnd();
+
+    /**
      * End the process with the exit status {@literal 0}
      */
     void end();
@@ -181,5 +191,10 @@ public interface CommandProcess extends Tty {
      * @param result a phased result of the command
      */
     void appendResult(ResultModel result);
+
+    /**
+     * 仅开放 RecorderView 的输出
+     */
+    void justShowRecorderView(boolean justShowRecorderView);
 
 }

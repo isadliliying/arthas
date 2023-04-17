@@ -64,6 +64,7 @@
         <module>tunnel-common</module>
         <module>tunnel-client</module>
         <module>core</module>
+        <module>plugin-recorder</module>
         <module>agent</module>
         <module>client</module>
         <module>memorycompiler</module>

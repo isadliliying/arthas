@@ -280,7 +280,7 @@ public class ArthasBootstrap {
         BinderUtils.inject(arthasEnvironment, configure);
     }
 
-    private static String arthasHome() {
+    public static String arthasHome() {
         if (ARTHAS_HOME != null) {
             return ARTHAS_HOME;
         }

@@ -30,6 +30,7 @@ import com.taobao.arthas.core.shell.command.CommandProcess;
 import com.taobao.arthas.core.util.ClassLoaderUtils;
 import com.taobao.arthas.core.util.ClassUtils;
 import com.taobao.arthas.core.util.SearchUtils;
+import com.taobao.arthas.core.util.StringUtils;
 import com.taobao.middleware.cli.annotations.DefaultValue;
 import com.taobao.middleware.cli.annotations.Description;
 import com.taobao.middleware.cli.annotations.Name;
@@ -232,6 +233,19 @@ public class VmToolCommand extends AnnotatedCommand {
         } catch (Throwable e) {
             logger.error("vmtool error", e);
             process.end(1, "vmtool error: " + e.getMessage());
+        }
+    }
+
+    public void autoInitClassLoader(final CommandProcess process){
+        if (StringUtils.isBlank(classLoaderClass)) {
+            String defaultClassLoaderName = "org.springframework.boot.loader.LaunchedURLClassLoader";
+            Instrumentation inst = process.session().getInstrumentation();
+            List<ClassLoader> matchedClassLoaders = ClassLoaderUtils.getClassLoaderByClassName(inst, defaultClassLoaderName);
+            if (matchedClassLoaders != null && !matchedClassLoaders.isEmpty()) {
+                this.setClassLoaderClass(defaultClassLoaderName);
+            }
+        } else {
+            this.setClassLoaderClass(this.classLoaderClass);
         }
     }
 

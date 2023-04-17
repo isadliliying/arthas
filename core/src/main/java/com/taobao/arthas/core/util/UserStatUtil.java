@@ -101,13 +101,13 @@ public class UserStatUtil {
 
     public static ClassLoader findSuitableClassLoader(Instrumentation inst){
         String defaultClassLoaderName = "org.springframework.boot.loader.LaunchedURLClassLoader";
-        String backupClassLoaderName = "jdk.internal.loader.ClassLoaders$AppClassLoader";
+        String backupClassLoaderName = "sun.misc.Launcher$AppClassLoader";
         List<ClassLoader> defaultClassLoaders = ClassLoaderUtils.getClassLoaderByClassName(inst, defaultClassLoaderName);
         List<ClassLoader> backupClassLoaders = ClassLoaderUtils.getClassLoaderByClassName(inst, backupClassLoaderName);
         defaultClassLoaders.addAll(backupClassLoaders);
 
         if (defaultClassLoaders.isEmpty()){
-            return null;
+            return ClassLoader.getSystemClassLoader();
         }
         return defaultClassLoaders.get(0);
     }

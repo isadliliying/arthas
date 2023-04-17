@@ -98,7 +98,6 @@ public class InstancesCommand extends AnnotatedCommand {
 
     @Override
     public void process(final CommandProcess process) {
-        //目前好像都是每次使用时创建，没有保存，不知道为啥
         VmToolCommand vmToolCommand = new VmToolCommand();
         vmToolCommand.setAction(VmToolCommand.VmToolAction.getInstances);
         vmToolCommand.setClassName(this.className);
