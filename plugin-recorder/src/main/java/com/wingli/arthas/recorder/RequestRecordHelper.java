@@ -1,9 +1,11 @@
 package com.wingli.arthas.recorder;
 
+import com.alibaba.dubbo.common.utils.PojoUtils;
 import com.alibaba.dubbo.rpc.Invocation;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.Result;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.google.common.util.concurrent.RateLimiter;
 import com.wingli.arthas.recorder.entity.DubboRequestFlowPo;
 import com.wingli.arthas.recorder.entity.HttpRequestFlowPo;
@@ -115,6 +117,10 @@ public class RequestRecordHelper {
             Object[] args = invocation.getArguments();
             dubboRequestFlowPo.setDubbo_request_args(JSON.toJSONString(args));
 
+            Object[] generalizeArgs = PojoUtils.generalize(args);
+            String arrStr = new JSONArray(Arrays.asList(generalizeArgs)).toJSONString();
+            dubboRequestFlowPo.setDubbo_request_args(arrStr);
+
             //3.attachments
             Map<String, String> attachments = invocation.getAttachments();
             dubboRequestFlowPo.setDubbo_request_attachments(JSON.toJSONString(attachments));
@@ -124,7 +130,9 @@ public class RequestRecordHelper {
                 @Override
                 public void run() {
                     try {
-                        String fileName = System.nanoTime() + "-" + interfaceClz + "-" + methodName + "-" + ".json";
+                        long current = counter.addAndGet(1);
+
+                        String fileName = System.nanoTime() + "-" + counter + "-" + interfaceClz + "-" + methodName + "-" + ".json";
                         String dir = RequestRecordUtil.getRecordsDir();
                         String path = dir + fileName;
                         {
@@ -142,7 +150,6 @@ public class RequestRecordHelper {
                             fileWriter.append(JSON.toJSONString(dubboRequestFlowPo));
                             fileWriter.close();
                         }
-                        long current = counter.addAndGet(1);
                         stat(null, dubboRequestFlowPo, current);
                     } catch (Exception e) {
                         logger.error("write file err.", e);
@@ -253,6 +260,7 @@ public class RequestRecordHelper {
                 @Override
                 public void run() {
                     try {
+                        long current = counter.addAndGet(1);
 
                         //fill request body
                         byte[] requestBytes = flattenBytes(finalRequestByteList);
@@ -279,7 +287,7 @@ public class RequestRecordHelper {
                         if (StringUtils.isBlank(userUid)) {
                             userUid = "unknown";
                         }
-                        String fileName = System.nanoTime() + "-" + httpRequestInfo.getMethod() + "-" + httpRequestInfo.getUrlWithoutQuery().replace("/", "|") + "-" + userUid + ".json";
+                        String fileName = System.nanoTime() + "-" + counter + "-" + httpRequestInfo.getMethod() + "-" + httpRequestInfo.getUrlWithoutQuery().replace("/", "|") + "-" + userUid + ".json";
                         String dir = RequestRecordUtil.getRecordsDir();
                         String path = dir + fileName;
                         {
@@ -297,7 +305,6 @@ public class RequestRecordHelper {
                             fileWriter.append(JSON.toJSONString(httpRequestFlowPo));
                             fileWriter.close();
                         }
-                        long current = counter.addAndGet(1);
                         stat(httpRequestFlowPo, null, current);
                     } catch (Exception e) {
                         logger.error("write file err.", e);
