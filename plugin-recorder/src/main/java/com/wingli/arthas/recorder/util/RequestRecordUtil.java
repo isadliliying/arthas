@@ -190,12 +190,4 @@ public class RequestRecordUtil {
         return data.replace("\"", "\\\"");
     }
 
-    /**
-     * 获取用户目录
-     * 注意后缀是没有/
-     */
-    public static String getRecordsDir(){
-        return System.getProperty("arthas.recorder.dir", "/app/recorder/records/");
-    }
-
 }

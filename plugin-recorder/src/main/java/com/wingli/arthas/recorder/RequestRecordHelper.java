@@ -41,7 +41,9 @@ public class RequestRecordHelper {
 
     private static final int MAX_LENGTH = 40960;
 
-    private static final String requestPostUrl = "https://study.test.seewo.com/api/study/minder/v1/tools/request/record";
+    private static final String requestPostUrlFat = "https://study.test.seewo.com/api/study/minder/v1/tools/request/record";
+
+    private static final String requestPostUrlPro = "https://study.test.seewo.com/api/study/minder/v1/tools/request/record";
 
     public static AtomicLong newestHeartbeatTime = new AtomicLong();
 
@@ -145,7 +147,11 @@ public class RequestRecordHelper {
                         param.setDubboRequestAttachments(attachmentsStr);
                         Map<String, String> headers = new HashMap<String, String>();
                         headers.put("Content-Type", "application/json");
-                        HttpUtil.invokePostBody(requestPostUrl, headers, JSON.toJSONString(param));
+                        if (env.toUpperCase().equals("PRO")){
+                            HttpUtil.invokePostBody(requestPostUrlPro, headers, JSON.toJSONString(param));
+                        }else {
+                            HttpUtil.invokePostBody(requestPostUrlFat, headers, JSON.toJSONString(param));
+                        }
                         stat(param, current);
                     } catch (Exception e) {
                         logger.error("write file err.", e);
@@ -291,7 +297,11 @@ public class RequestRecordHelper {
                         param.setHttpUserUid(finalUserUid);
                         Map<String, String> headers = new HashMap<String, String>();
                         headers.put("Content-Type", "application/json");
-                        HttpUtil.invokePostBody(requestPostUrl, headers, JSON.toJSONString(param));
+                        if (env.toUpperCase().equals("PRO")){
+                            HttpUtil.invokePostBody(requestPostUrlPro, headers, JSON.toJSONString(param));
+                        }else {
+                            HttpUtil.invokePostBody(requestPostUrlFat, headers, JSON.toJSONString(param));
+                        }
 
                         stat(param, current);
                     } catch (Exception e) {

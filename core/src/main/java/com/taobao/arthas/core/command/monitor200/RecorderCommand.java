@@ -42,8 +42,6 @@ public class RecorderCommand extends AnnotatedCommand {
 
     private String httpExpress;
 
-    private String recordDir;
-
     private String taskName;
 
     private int numLimit;
@@ -69,13 +67,8 @@ public class RecorderCommand extends AnnotatedCommand {
         this.numLimit = numLimit;
     }
 
-    @Option(shortName = "d", longName = "dir")
-    @Description("存储目录,如: /app/recorder/")
-    public void setRecordDir(String recordDir) {
-        this.recordDir = recordDir;
-    }
-
     @Option(shortName = "t", longName = "taskName")
+    @DefaultValue("undefine")
     @Description("任务名称,如: app-store-dubbo")
     public void setTaskName(String taskName) {
         this.taskName = taskName;
@@ -100,16 +93,6 @@ public class RecorderCommand extends AnnotatedCommand {
 
             System.setProperty("arthas.recorder.limit", String.valueOf(numLimit));
             process.appendResult(new RecorderModel("recorder: limit " + numLimit));
-
-            if (recordDir == null) {
-                String dir = ArthasBootstrap.arthasHome() + "/recorder/";
-                System.setProperty("arthas.recorder.dir", dir);
-                process.appendResult(new RecorderModel("recorder: dir " + dir));
-            } else {
-                System.setProperty("arthas.recorder.dir", recordDir);
-                process.appendResult(new RecorderModel("recorder: dir " + recordDir));
-            }
-
             System.setProperty("arthas.recorder.http", httpExpress);
             process.appendResult(new RecorderModel("recorder: http " + String.valueOf(httpExpress)));
             System.setProperty("arthas.recorder.dubbo", dubboExpress);
