@@ -67,26 +67,29 @@ class RecorderWatcherAdviceListener extends AdviceListenerAdapter {
 
     private void watching(Object[] args) {
         try {
-            Object httpRequestPo = args[0];
-            Object dubboRequestPo = args[1];
-            Object current = args[2];
+            Object param = args[0];
+            Object current = args[1];
 
-            if (httpRequestPo != null) {
-                JSONObject requestObj = JSON.parseObject(JSON.toJSONString(httpRequestPo));
-                String url = requestObj.getString("http_request_url");
-                String method = requestObj.getString("http_request_method");
+            JSONObject requestObj = JSON.parseObject(JSON.toJSONString(param));
+            String taskName = requestObj.getString("taskName");
+            String requestType = requestObj.getString("requestType");
+
+            if (requestType.equals("http")){
+                String url = requestObj.getString("httpRequestUrl");
+                String method = requestObj.getString("httpRequestMethod");
                 URI uri = new URI(url);
                 String urlWithoutQuery = uri.getRawPath();
 
-                String printContent = String.format("[%d][http][%s][%s]", current, method, urlWithoutQuery);
+                String printContent = String.format("[%d][%s][%s][%s][%s]", current,taskName,requestType, method, urlWithoutQuery);
                 process.appendResult(new RecorderModel(printContent));
-            } else if (dubboRequestPo != null) {
-                JSONObject requestObj = JSON.parseObject(JSON.toJSONString(dubboRequestPo));
-                String dubboInterface = requestObj.getString("dubbo_interface");
-                String dubboMethod = requestObj.getString("dubbo_method");
-                String printContent = String.format("[%d][dubbo][%s][%s]", current, dubboInterface, dubboMethod);
+            }else {
+                String dubboInterface = requestObj.getString("dubboInterface");
+                String dubboMethod = requestObj.getString("dubboMethod");
+
+                String printContent = String.format("[%d][%s][%s][%s][%s]", current,taskName,requestType, dubboInterface, dubboMethod);
                 process.appendResult(new RecorderModel(printContent));
             }
+
         } catch (Throwable e) {
             logger.warn("recorder watch failed.", e);
             process.end(-1, "recorder watch failed, condition is: " + e.getMessage() + ", visit " + LogUtil.loggingFile()

@@ -6,10 +6,12 @@ import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.Result;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
+import com.cvte.psd.foundation.Foundation;
 import com.google.common.util.concurrent.RateLimiter;
-import com.wingli.arthas.recorder.entity.DubboRequestFlowPo;
-import com.wingli.arthas.recorder.entity.HttpRequestFlowPo;
 import com.wingli.arthas.recorder.entity.HttpRequestInfo;
+import com.wingli.arthas.recorder.entity.RequestRecordParam;
+import com.wingli.arthas.recorder.util.HttpUtil;
+import com.wingli.arthas.recorder.util.IPUtils;
 import com.wingli.arthas.recorder.util.RequestRecordUtil;
 import org.apache.catalina.connector.CoyoteInputStream;
 import org.apache.catalina.connector.CoyoteOutputStream;
@@ -21,8 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileWriter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -40,6 +40,8 @@ public class RequestRecordHelper {
     private static final Logger logger = LoggerFactory.getLogger(RequestRecordHelper.class);
 
     private static final int MAX_LENGTH = 40960;
+
+    private static final String requestPostUrl = "https://study.test.seewo.com/api/study/minder/v1/tools/request/record";
 
     public static AtomicLong newestHeartbeatTime = new AtomicLong();
 
@@ -61,6 +63,8 @@ public class RequestRecordHelper {
     private static ConcurrentHashMap<Long, List<byte[]>> httpInputStreamBytesMap = new ConcurrentHashMap<Long, List<byte[]>>();
     private static ConcurrentHashMap<Long, Integer> httpOutputStreamMap = new ConcurrentHashMap<Long, Integer>();
     private static ConcurrentHashMap<Long, List<byte[]>> httpOutputStreamBytesMap = new ConcurrentHashMap<Long, List<byte[]>>();
+
+    private static final String ip = IPUtils.getLocalIP();
 
     /**
      * 关闭
@@ -105,25 +109,20 @@ public class RequestRecordHelper {
             final String interfaceClz = invoker.getInterface().getCanonicalName();
             final String methodName = invocation.getMethodName();
 
-            if (!needToRecordDubbo(interfaceClz,methodName)){
+            if (!needToRecordDubbo(interfaceClz, methodName)) {
                 return;
             }
 
-            final DubboRequestFlowPo dubboRequestFlowPo = new DubboRequestFlowPo();
-            dubboRequestFlowPo.setDubbo_interface(interfaceClz);
-            dubboRequestFlowPo.setDubbo_method(methodName);
 
             //2.param
             Object[] args = invocation.getArguments();
-            dubboRequestFlowPo.setDubbo_request_args(JSON.toJSONString(args));
 
             Object[] generalizeArgs = PojoUtils.generalize(args);
-            String arrStr = new JSONArray(Arrays.asList(generalizeArgs)).toJSONString();
-            dubboRequestFlowPo.setDubbo_request_args(arrStr);
+            final String arrStr = new JSONArray(Arrays.asList(generalizeArgs)).toJSONString();
 
             //3.attachments
             Map<String, String> attachments = invocation.getAttachments();
-            dubboRequestFlowPo.setDubbo_request_attachments(JSON.toJSONString(attachments));
+            final String attachmentsStr = JSON.toJSONString(attachments);
 
             //write file
             fileAsyncThreadPool.submit(new Runnable() {
@@ -132,25 +131,22 @@ public class RequestRecordHelper {
                     try {
                         long current = counter.addAndGet(1);
 
-                        String fileName = System.nanoTime() + "-" + counter + "-" + interfaceClz + "-" + methodName + "-" + ".json";
-                        String dir = RequestRecordUtil.getRecordsDir();
-                        String path = dir + fileName;
-                        {
-                            File file = new File(dir);
-                            file.mkdirs();
-                        }
-                        {
-                            File file = new File(path);
-                            if (!file.exists()) {
-                                file.createNewFile();
-                            }
-                        }
-                        {
-                            FileWriter fileWriter = new FileWriter(path, true);
-                            fileWriter.append(JSON.toJSONString(dubboRequestFlowPo));
-                            fileWriter.close();
-                        }
-                        stat(null, dubboRequestFlowPo, current);
+                        String env = Foundation.server().getEnvType();
+                        String appId = Foundation.app().getAppId();
+                        RequestRecordParam param = new RequestRecordParam();
+                        param.setTaskName(getTaskName());
+                        param.setEnv(env);
+                        param.setAppId(appId);
+                        param.setIpAddr(ip);
+                        param.setRequestType("dubbo");
+                        param.setDubboInterface(interfaceClz);
+                        param.setDubboMethod(methodName);
+                        param.setDubboRequestArgs(arrStr);
+                        param.setDubboRequestAttachments(attachmentsStr);
+                        Map<String, String> headers = new HashMap<String, String>();
+                        headers.put("Content-Type", "application/json");
+                        HttpUtil.invokePostBody(requestPostUrl, headers, JSON.toJSONString(param));
+                        stat(param, current);
                     } catch (Exception e) {
                         logger.error("write file err.", e);
                     }
@@ -238,16 +234,16 @@ public class RequestRecordHelper {
             List<byte[]> requestByteList = null;
             //List<byte[]> responseByteList = null;
             int takeTime = 0;
-            final HttpRequestFlowPo httpRequestFlowPo = new HttpRequestFlowPo();
 
+            String traceUid = null;
+            String userUid = null;
             try {
                 requestByteList = httpInputStreamBytesMap.get(threadId) != null ? httpInputStreamBytesMap.get(threadId) : Collections.<byte[]>emptyList();
                 //responseByteList = httpOutputStreamBytesMap.get(threadId) != null ? httpOutputStreamBytesMap.get(threadId) : Collections.<byte[]>emptyList();
                 //common
-                httpRequestFlowPo.setTrace_uid(traceUidMap.get(threadId) != null ? traceUidMap.get(threadId) : "");
-                httpRequestFlowPo.setUser_uid(userUidUidMap.get(threadId) != null ? userUidUidMap.get(threadId) : "");
+                traceUid = traceUidMap.get(threadId) != null ? traceUidMap.get(threadId) : "";
+                userUid = userUidUidMap.get(threadId) != null ? userUidUidMap.get(threadId) : "";
                 takeTime = (int) (System.currentTimeMillis() - (httpStartTimeMap.get(threadId) != null ? httpStartTimeMap.get(threadId) : System.currentTimeMillis()));
-
             } finally {
                 clear(threadId);
             }
@@ -256,6 +252,8 @@ public class RequestRecordHelper {
             final List<byte[]> finalRequestByteList = requestByteList;
             //final List<byte[]> finalResponseByteList = responseByteList;
             final int finalTakeTime = takeTime;
+            final String finalTraceUid = traceUid;
+            final String finalUserUid = userUid;
             fileAsyncThreadPool.submit(new Runnable() {
                 @Override
                 public void run() {
@@ -275,37 +273,27 @@ public class RequestRecordHelper {
                         //httpResponseInfo.setBody(new String(responseBytes, resp.getCharacterEncoding()));
 
                         String token = findTokenByHttpRequest(httpRequestInfo);
+                        String headerStr = JSON.toJSONString(httpRequestInfo.getHeaders());
+                        String env = Foundation.server().getEnvType();
+                        String appId = Foundation.app().getAppId();
+                        RequestRecordParam param = new RequestRecordParam();
+                        param.setTaskName(getTaskName());
+                        param.setEnv(env);
+                        param.setAppId(appId);
+                        param.setIpAddr(ip);
+                        param.setRequestType("http");
+                        param.setHttpRequestMethod(httpRequestInfo.getMethod());
+                        param.setHttpRequestUrl(httpRequestInfo.getFullUrl());
+                        param.setHttpRequestBody(httpRequestInfo.getBody());
+                        param.setHttpRequestHeaders(headerStr);
+                        param.setHttpTokenUid(token);
+                        param.setHttpTraceUid(finalTraceUid);
+                        param.setHttpUserUid(finalUserUid);
+                        Map<String, String> headers = new HashMap<String, String>();
+                        headers.put("Content-Type", "application/json");
+                        HttpUtil.invokePostBody(requestPostUrl, headers, JSON.toJSONString(param));
 
-                        //http
-                        httpRequestFlowPo.setHttp_token_uid(token);
-                        httpRequestFlowPo.setHttp_request_method(httpRequestInfo.getMethod());
-                        httpRequestFlowPo.setHttp_request_url(httpRequestInfo.getFullUrl());
-                        httpRequestFlowPo.setHttp_request_headers(JSON.toJSONString(httpRequestInfo.getHeaders()));
-                        httpRequestFlowPo.setHttp_request_body(httpRequestInfo.getBody());
-
-                        String userUid = httpRequestFlowPo.getUser_uid();
-                        if (StringUtils.isBlank(userUid)) {
-                            userUid = "unknown";
-                        }
-                        String fileName = System.nanoTime() + "-" + counter + "-" + httpRequestInfo.getMethod() + "-" + httpRequestInfo.getUrlWithoutQuery().replace("/", "|") + "-" + userUid + ".json";
-                        String dir = RequestRecordUtil.getRecordsDir();
-                        String path = dir + fileName;
-                        {
-                            File file = new File(dir);
-                            file.mkdirs();
-                        }
-                        {
-                            File file = new File(path);
-                            if (!file.exists()) {
-                                file.createNewFile();
-                            }
-                        }
-                        {
-                            FileWriter fileWriter = new FileWriter(path, true);
-                            fileWriter.append(JSON.toJSONString(httpRequestFlowPo));
-                            fileWriter.close();
-                        }
-                        stat(httpRequestFlowPo, null, current);
+                        stat(param, current);
                     } catch (Exception e) {
                         logger.error("write file err.", e);
                     }
@@ -318,11 +306,15 @@ public class RequestRecordHelper {
 
     }
 
+    private static String getTaskName(){
+        return System.getProperty("arthas.recorder.task.name", "undefine");
+    }
+
     /**
      * 统计信息
      * 预留接口
      */
-    public static void stat(HttpRequestFlowPo httpRequestFlowPo, DubboRequestFlowPo dubboRequestFlowPo, long current) {
+    public static void stat(RequestRecordParam param, long current) {
 
     }
 
@@ -417,9 +409,13 @@ public class RequestRecordHelper {
 
         String method = httpRequestInfo.getMethod().toUpperCase();
         String url = httpRequestInfo.getUrlWithoutQuery();
-        String param = method+" "+url;
-        if (!Pattern.matches(regex,param)) {
-           return false;
+        //流量记录接口，避免循环
+        if (url.endsWith("/v1/tools/request/record")){
+            return false;
+        }
+        String param = method + " " + url;
+        if (!Pattern.matches(regex, param)) {
+            return false;
         }
 
         //ignore health check
@@ -432,17 +428,16 @@ public class RequestRecordHelper {
 
     private static boolean needToRecordDubbo(String dubboInterface, String dubboMethod) {
         String regex = System.getProperty("arthas.recorder.dubbo", "").trim();
-        if (regex.isEmpty() || countAlreadyReach()){
+        if (regex.isEmpty() || countAlreadyReach()) {
             return false;
         }
-        String param = dubboInterface+" "+dubboMethod;
-        if (!Pattern.matches(regex,param) && needToRecord()) {
+        String param = dubboInterface + " " + dubboMethod;
+        if (!Pattern.matches(regex, param) && needToRecord()) {
             return false;
         }
 
         return needToRecord();
     }
-
 
 
     /**
@@ -464,7 +459,7 @@ public class RequestRecordHelper {
         return currentCount < limit && rateLimiter.tryAcquire();
     }
 
-    private static boolean countAlreadyReach(){
+    private static boolean countAlreadyReach() {
         long currentCount = counter.longValue();
         String limitStr = System.getProperty("arthas.recorder.limit", "0").trim().toUpperCase();
         int limit = Integer.parseInt(limitStr);

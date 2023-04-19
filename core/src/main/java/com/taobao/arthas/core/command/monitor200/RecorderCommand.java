@@ -44,6 +44,8 @@ public class RecorderCommand extends AnnotatedCommand {
 
     private String recordDir;
 
+    private String taskName;
+
     private int numLimit;
 
     @Option(shortName = "d", longName = "dubbo")
@@ -71,6 +73,12 @@ public class RecorderCommand extends AnnotatedCommand {
     @Description("存储目录,如: /app/recorder/")
     public void setRecordDir(String recordDir) {
         this.recordDir = recordDir;
+    }
+
+    @Option(shortName = "t", longName = "taskName")
+    @Description("任务名称,如: app-store-dubbo")
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
     }
 
     @Override
@@ -106,6 +114,8 @@ public class RecorderCommand extends AnnotatedCommand {
             process.appendResult(new RecorderModel("recorder: http " + String.valueOf(httpExpress)));
             System.setProperty("arthas.recorder.dubbo", dubboExpress);
             process.appendResult(new RecorderModel("recorder: dubbo " + String.valueOf(dubboExpress)));
+            System.setProperty("arthas.recorder.task.name", taskName);
+            process.appendResult(new RecorderModel("recorder: task name " + String.valueOf(taskName)));
 
 
             //vmtool --action getInstances --className org.springframework.boot.loader.LaunchedURLClassLoader -express ''
