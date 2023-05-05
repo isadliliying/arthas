@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletResponse;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -39,11 +40,11 @@ public class RequestRecordHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(RequestRecordHelper.class);
 
-    private static final int MAX_LENGTH = 40960;
+    private static final int MAX_LENGTH = 80960;
 
     private static final String requestPostUrlFat = "https://study.test.seewo.com/api/study/minder/v1/tools/request/record";
 
-    private static final String requestPostUrlPro = "https://study.test.seewo.com/api/study/minder/v1/tools/request/record";
+    private static final String requestPostUrlPro = "https://study.seewo.com/api/study/minder/v1/tools/request/record";
 
     public static AtomicLong newestHeartbeatTime = new AtomicLong();
 
@@ -338,7 +339,7 @@ public class RequestRecordHelper {
         if (inputStreamHashCode != inputStream.hashCode()) {
             return;
         }
-        dataAsyncThreadPool.submit(new Runnable() {
+        dataAsyncThreadPool.execute(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -350,7 +351,7 @@ public class RequestRecordHelper {
                     }
                     byteList.add(bytes);
                     httpInputStreamBytesMap.put(threadId, byteList);
-                    logger.info("input space:" + calculateBytes(httpInputStreamBytesMap));
+                    //logger.info("input space:" + calculateBytes(httpInputStreamBytesMap));
                 } catch (Exception e) {
                     logger.error("save byte err.", e);
                 }
@@ -368,7 +369,7 @@ public class RequestRecordHelper {
         if (outputStreamHashCode != outputStream.hashCode()) {
             return;
         }
-        dataAsyncThreadPool.submit(new Runnable() {
+        dataAsyncThreadPool.execute(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -395,7 +396,7 @@ public class RequestRecordHelper {
     public static boolean needToRecord(CoyoteInputStream inputStream) {
         long threadId = Thread.currentThread().getId();
         int inputStreamHashCode = httpInputStreamMap.get(threadId) != null ? httpInputStreamMap.get(threadId) : 0;
-        return inputStreamHashCode == inputStream.hashCode() && needToRecord();
+        return inputStreamHashCode == inputStream.hashCode();
     }
 
     /**
@@ -404,7 +405,7 @@ public class RequestRecordHelper {
     public static boolean needToRecord(CoyoteOutputStream outputStream) {
         long threadId = Thread.currentThread().getId();
         int outputStreamHashCode = httpOutputStreamMap.get(threadId) != null ? httpOutputStreamMap.get(threadId) : 0;
-        return outputStreamHashCode == outputStream.hashCode() && needToRecord();
+        return outputStreamHashCode == outputStream.hashCode();
     }
 
     /**
@@ -442,7 +443,7 @@ public class RequestRecordHelper {
             return false;
         }
         String param = dubboInterface + " " + dubboMethod;
-        if (!Pattern.matches(regex, param) && needToRecord()) {
+        if (!Pattern.matches(regex, param)) {
             return false;
         }
 
