@@ -19,6 +19,8 @@ public class OgnlExpress implements Express {
     private static final Logger logger = LoggerFactory.getLogger(OgnlExpress.class);
     private static final ArthasObjectPropertyAccessor OBJECT_PROPERTY_ACCESSOR = new ArthasObjectPropertyAccessor();
 
+    private static final ArthasMethodAccessor METHOD_ACCESSOR = new ArthasMethodAccessor();
+
     private Object bindObject;
     private final OgnlContext context;
 
@@ -27,7 +29,18 @@ public class OgnlExpress implements Express {
     }
 
     public OgnlExpress(ClassResolver classResolver) {
+        //
         OgnlRuntime.setPropertyAccessor(Object.class, OBJECT_PROPERTY_ACCESSOR);
+        OgnlRuntime.setMethodAccessor(Object.class, METHOD_ACCESSOR);
+        OgnlRuntime.setMethodAccessor(Object.class, METHOD_ACCESSOR);
+        OgnlRuntime.setMethodAccessor(byte[].class, METHOD_ACCESSOR);
+        OgnlRuntime.setMethodAccessor(short[].class, METHOD_ACCESSOR);
+        OgnlRuntime.setMethodAccessor(char[].class, METHOD_ACCESSOR);
+        OgnlRuntime.setMethodAccessor(int[].class, METHOD_ACCESSOR);
+        OgnlRuntime.setMethodAccessor(long[].class, METHOD_ACCESSOR);
+        OgnlRuntime.setMethodAccessor(float[].class, METHOD_ACCESSOR);
+        OgnlRuntime.setMethodAccessor(double[].class, METHOD_ACCESSOR);
+        OgnlRuntime.setMethodAccessor(Object[].class, METHOD_ACCESSOR);
         context = new OgnlContext();
         context.setClassResolver(classResolver);
         // allow private field access
