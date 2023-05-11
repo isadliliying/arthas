@@ -58,6 +58,7 @@ public class LookUtils {
         if (locationCode == null || locationCode.isEmpty()) {
             return false;
         }
+        if (locationCode.equals("-1")) return true;
         if (locationCode.contains("-")) {
             String[] arr = locationCode.split(LOCATION_CODE_SPLITTER);
             if (arr.length != 2) {
@@ -70,9 +71,9 @@ public class LookUtils {
 
     /**
      * 判断是否为LocatonCode类型
-     * 依据：是否包含 "-"
      */
     public static boolean isLocationCode(String location) {
+        if (location.equals("-1")) return false;
         return location.contains(LOCATION_CODE_SPLITTER);
     }
 
