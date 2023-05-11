@@ -22,7 +22,7 @@ import static java.lang.String.format;
  * Created by vlinux on 15/5/20.
  */
 public class ObjectView implements View {
-    public static final int MAX_DEEP = 4;
+    public static final int MAX_DEEP = 7;
     private static final Logger logger = LoggerFactory.getLogger(ObjectView.class);
     private final static int MAX_OBJECT_LENGTH = ArthasConstants.MAX_HTTP_CONTENT_LENGTH;
 
