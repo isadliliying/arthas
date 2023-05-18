@@ -23,11 +23,18 @@ import com.taobao.text.ui.TableElement;
 import static com.taobao.text.Decoration.bold;
 
 /**
- *
  * @author hengyunabc 2018-10-18
- *
  */
 public class ClassUtils {
+
+    public static boolean hasImplInterface(Class<?> clazz, String interfaceName) {
+        for (Class<?> anInterface : clazz.getInterfaces()) {
+            if (anInterface.getName().equals(interfaceName)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public static String getCodeSource(final CodeSource cs) {
         if (null == cs || null == cs.getLocation() || null == cs.getLocation().getFile()) {
@@ -192,9 +199,9 @@ public class ClassUtils {
     public static ClassLoaderVO createClassLoaderVO(ClassLoader classLoader) {
         ClassLoaderVO classLoaderVO = new ClassLoaderVO();
         classLoaderVO.setHash(classLoaderHash(classLoader));
-        classLoaderVO.setName(classLoader==null?"BootstrapClassLoader":classLoader.toString());
+        classLoaderVO.setName(classLoader == null ? "BootstrapClassLoader" : classLoader.toString());
         ClassLoader parent = classLoader == null ? null : classLoader.getParent();
-        classLoaderVO.setParent(parent==null?null:parent.toString());
+        classLoaderVO.setParent(parent == null ? null : parent.toString());
         return classLoaderVO;
     }
 
@@ -214,7 +221,7 @@ public class ClassUtils {
     }
 
     public static String classLoaderHash(ClassLoader classLoader) {
-        if (classLoader == null ) {
+        if (classLoader == null) {
             return "null";
         }
         return Integer.toHexString(classLoader.hashCode());

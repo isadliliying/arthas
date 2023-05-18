@@ -82,6 +82,7 @@ public class ResultViewResolver {
             registerView(VmToolView.class);
             registerView(JFRView.class);
             registerView(LookView.class);
+            registerView(RestView.class);
 
             registerView(RecorderView.class);
 
