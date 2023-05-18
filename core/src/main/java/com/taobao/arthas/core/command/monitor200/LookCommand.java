@@ -167,14 +167,6 @@ public class LookCommand extends EnhancerCommand {
         return new LookAdviceListener(this, process, GlobalOptions.verbose || this.verbose);
     }
 
-    /**
-     * 命令补齐
-     */
-    @Override
-    protected void completeArgument3(Completion completion) {
-        CompletionUtils.complete(completion, Arrays.asList(EnhancerCommand.LOOK_EXPRESS_EXAMPLES));
-    }
-
     @Override
     public void process(final CommandProcess process) {
         //兼容旧版，如果没有那些方法，就不要用这个命令
