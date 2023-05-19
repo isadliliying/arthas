@@ -86,6 +86,8 @@ public class TimeTunnelCommand extends EnhancerCommand {
     private int replayTimes = 1;
     private long replayInterval = 1000L;
     private String userUid;
+
+    private String traceUid;
     private static final Logger logger = LoggerFactory.getLogger(TimeTunnelCommand.class);
 
     @Argument(index = 0, argName = "class-pattern", required = false)
@@ -196,6 +198,12 @@ public class TimeTunnelCommand extends EnhancerCommand {
     @Description("在原条件上增加userUid条件，相当于加了 @com.seewo.honeycomb.log.LogContextHolder@get().userId.equals(\"13432432\")")
     public void setUserUid(String userUid) {
         this.userUid = userUid;
+    }
+
+    @Option(shortName = "st", longName = "traceUid")
+    @Description("回放时，设置traceUid，方便观测")
+    public void setTraceUid(String traceUid) {
+        this.traceUid = traceUid;
     }
 
     public boolean isRegEx() {
@@ -531,6 +539,10 @@ public class TimeTunnelCommand extends EnhancerCommand {
                         .setThrowExp(null);
 
                 try {
+                    if (!StringUtils.isBlank(traceUid)){
+                        String setTraceExpress = "@com.seewo.honeycomb.log.LogContextHolder@setTraceId(\""+traceUid+"\")";
+                        ExpressFactory.unpooledExpress(advice.getLoader()).bind(advice).get(setTraceExpress);
+                    }
                     //execute successful
                     Object returnObj = method.invoke(advice.getTarget(), advice.getParams());
                     double cost = (System.nanoTime() - beginTime) / 1000000.0;
