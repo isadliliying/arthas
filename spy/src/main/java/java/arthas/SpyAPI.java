@@ -24,6 +24,16 @@ public class SpyAPI {
     public static final AbstractSpy NOPSPY = new NopSpy();
     private static volatile AbstractSpy spyInstance = NOPSPY;
 
+    private static final ThreadLocal<String> traceUidRef = new ThreadLocal<String>();
+
+    public static String getTraceUid(){
+        return traceUidRef.get();
+    }
+
+    public static void setTraceUid(String traceUid){
+        traceUidRef.set(traceUid);
+    }
+
     public static volatile boolean INITED;
 
     public static AbstractSpy getSpy() {

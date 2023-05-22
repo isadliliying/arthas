@@ -187,7 +187,7 @@ public abstract class EnhancerCommand extends AnnotatedCommand {
                 return;
             }
 
-            if (effect.cCnt() == 0 || effect.mCnt() == 0) {
+            if ((effect.cCnt() == 0 || effect.mCnt() == 0) && !(this instanceof STraceCommand)) {
                 // no class effected
                 if (!StringUtils.isEmpty(effect.getOverLimitMsg())) {
                     process.appendResult(new EnhancerModel(effect, false));

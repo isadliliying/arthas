@@ -117,6 +117,16 @@ public class LogUtil {
         return new File("").getAbsolutePath();
     }
 
+
+    public static String straceDir() {
+        String straceDir = LogUtil.loggingDir() + "/strace/";
+        File logFileDir = new File((straceDir));
+        if (!logFileDir.exists()){
+            logFileDir.mkdirs();
+        }
+        return straceDir;
+    }
+
     public static String cacheDir() {
         File logsDir = new File(loggingDir()).getParentFile();
         if (logsDir.exists()) {

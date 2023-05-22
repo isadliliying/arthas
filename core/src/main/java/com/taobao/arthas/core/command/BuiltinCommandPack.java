@@ -99,6 +99,7 @@ public class BuiltinCommandPack implements CommandResolver {
         commandClassList.add(RecorderCommand.class);
         commandClassList.add(TokenCommand.class);
         commandClassList.add(RestCommand.class);
+        commandClassList.add(STraceCommand.class);
         try {
             if (ClassLoader.getSystemClassLoader().getResource("jdk/jfr/Recording.class") != null) {
                 commandClassList.add(JFRCommand.class);

@@ -164,4 +164,12 @@ public class ArthasMethod {
         this.methodName = methodName;
         this.methodDesc = methodDesc;
     }
+
+    public Method getMethod() {
+        return method;
+    }
+
+    public String getMethodDesc() {
+        return methodDesc;
+    }
 }
