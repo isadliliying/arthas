@@ -71,7 +71,7 @@ public abstract class EnhancerCommand extends AnnotatedCommand {
     }
 
     @Option(shortName = "m", longName = "maxMatch")
-    @DefaultValue("50")
+    @DefaultValue("5000")
     @Description("The maximum of matched class.")
     public void setMaxNumOfMatchedClass(int maxNumOfMatchedClass) {
         this.maxNumOfMatchedClass = maxNumOfMatchedClass;

@@ -8,15 +8,12 @@ import java.util.Map;
 
 abstract class AbstractSpanHandler implements SpanHandler {
 
-    private static final Map<String,String> defaultValue = new HashMap<String, String>();
+    private static final Map<String, String> enterDefaultValue = new HashMap<String, String>();
+    private static final Map<String, String> exitDefaultValue = new HashMap<String, String>();
 
     static {
-        defaultValue.put("msg","ignored");
-    }
-
-    @Override
-    public boolean hasMatch(Advice advice) {
-        return false;
+        enterDefaultValue.put("msg-enter", "ignored");
+        exitDefaultValue.put("msg-exit", "ignored");
     }
 
     @Override
@@ -32,7 +29,7 @@ abstract class AbstractSpanHandler implements SpanHandler {
     @Override
     public Object enterOgnlObj(Advice advice) {
         String express = enterOgnlExpress(advice);
-        if (express == null) return defaultValue;
+        if (express == null) return enterDefaultValue;
         try {
             return ExpressFactory.unpooledExpress(advice.getLoader()).bind(advice).get(express);
         } catch (Exception e) {
@@ -44,7 +41,7 @@ abstract class AbstractSpanHandler implements SpanHandler {
     @Override
     public Object exitOgnlObj(Advice advice) {
         String express = exitOgnlExpress(advice);
-        if (express == null) return defaultValue;
+        if (express == null) return exitDefaultValue;
         try {
             return ExpressFactory.unpooledExpress(advice.getLoader()).bind(advice).get(express);
         } catch (Exception e) {

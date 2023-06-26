@@ -1,6 +1,10 @@
 package com.taobao.arthas.core.shell.handlers.strace;
 
+import com.taobao.arthas.common.Pair;
 import com.taobao.arthas.core.advisor.Advice;
+import com.taobao.arthas.core.command.model.Line;
+
+import java.util.Map;
 
 public class Dubbo1SpanHandler extends AbstractSpanHandler {
 
@@ -11,6 +15,21 @@ public class Dubbo1SpanHandler extends AbstractSpanHandler {
         return "doInvoke".equals(methodName)
                 && advice.getParams().length == 1
                 && "com.alibaba.dubbo.rpc.protocol.dubbo.DubboInvoker".equals(clazzName);
+    }
+
+    @Override
+    public boolean hasMatch(Line line) {
+        return line.getMark().equals("DubboInvoker#doInvoke");
+    }
+
+    @Override
+    public Pair<String, String> getEnterMark(Line line) {
+        try {
+            String targetAddress = line.getObject().getString("targetAddress");
+            return Pair.make("[dubbo-remote]", "[" + targetAddress + "]");
+        } catch (Exception e) {
+            return Pair.make("[dubbo-remote]", "unknown");
+        }
     }
 
     @Override

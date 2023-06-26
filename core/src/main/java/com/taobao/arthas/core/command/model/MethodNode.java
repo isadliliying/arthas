@@ -45,11 +45,16 @@ public class MethodNode extends TraceNode {
     }
 
     public void begin() {
-        beginTimestamp = System.nanoTime();
+        begin(System.nanoTime());
     }
 
-    public void end() {
-        endTimestamp = System.nanoTime();
+    @Override
+    public void begin(long nanoTime) {
+        beginTimestamp = nanoTime;
+    }
+
+    public void end(long nanoTime) {
+        endTimestamp = nanoTime;
 
         long cost = getCost();
         if (cost < minCost) {
@@ -60,6 +65,10 @@ public class MethodNode extends TraceNode {
         }
         times++;
         totalCost += cost;
+    }
+
+    public void end() {
+        end(System.nanoTime());
     }
 
     public long getCost() {

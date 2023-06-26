@@ -7,6 +7,7 @@ import java.util.List;
 
 /**
  * Tree model of TraceCommand
+ *
  * @author gongdewei 2020/4/28
  */
 public class TraceTree {
@@ -22,20 +23,29 @@ public class TraceTree {
 
     /**
      * Begin a new method call
-     * @param className className of method
+     *
+     * @param className  className of method
      * @param methodName method name of the call
      * @param lineNumber line number of invoke point
      * @param isInvoking Whether to invoke this method in other classes
      */
-    public void begin(String className, String methodName, int lineNumber, boolean isInvoking) {
+    public void begin(String className, String methodName, int lineNumber, boolean isInvoking, long nanoTime) {
         TraceNode child = findChild(current, className, methodName, lineNumber);
         if (child == null) {
             child = new MethodNode(className, methodName, lineNumber, isInvoking);
             current.addChild(child);
         }
-        child.begin();
+        child.begin(nanoTime);
         current = child;
         nodeCount += 1;
+    }
+
+    public void begin(String className, String methodName, int lineNumber, boolean isInvoking) {
+        begin(className, methodName, lineNumber, isInvoking, System.nanoTime());
+    }
+
+    public void begin(String className, String methodName, long nanoTime) {
+        begin(className, methodName, -1, false, nanoTime);
     }
 
     private TraceNode findChild(TraceNode node, String className, String methodName, int lineNumber) {
@@ -56,14 +66,20 @@ public class TraceTree {
         if (node instanceof MethodNode) {
             MethodNode methodNode = (MethodNode) node;
             if (lineNumber != methodNode.getLineNumber()) return false;
-            if (className != null ? !className.equals(methodNode.getClassName()) : methodNode.getClassName() != null) return false;
+            if (className != null ? !className.equals(methodNode.getClassName()) : methodNode.getClassName() != null)
+                return false;
             return methodName != null ? methodName.equals(methodNode.getMethodName()) : methodNode.getMethodName() == null;
         }
         return false;
     }
 
     public void end() {
-        current.end();
+        end(System.nanoTime());
+    }
+
+
+    public void end(long nanoTime) {
+        current.end(nanoTime);
         if (current.parent() != null) {
             //TODO 为什么会到达这里？ 调用end次数比begin多？
             current = current.parent();
@@ -80,6 +96,10 @@ public class TraceTree {
     }
 
     public void end(boolean isThrow) {
+        end(isThrow, System.nanoTime());
+    }
+
+    public void end(boolean isThrow, long nanoTime) {
         if (isThrow) {
             current.setMark("throws Exception");
             if (current instanceof MethodNode) {
@@ -87,7 +107,7 @@ public class TraceTree {
                 methodNode.setThrow(true);
             }
         }
-        this.end();
+        this.end(nanoTime);
     }
 
     /**
@@ -99,6 +119,7 @@ public class TraceTree {
 
     /**
      * 转换标准类名，放在trace结束后统一转换，减少重复操作
+     *
      * @param node
      */
     private void normalizeClassName(TraceNode node) {

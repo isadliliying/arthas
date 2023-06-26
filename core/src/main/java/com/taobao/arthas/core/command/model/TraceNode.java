@@ -5,6 +5,7 @@ import java.util.List;
 
 /**
  * Abstract Node of TraceCommand
+ *
  * @author gongdewei 2020/4/28
  */
 public abstract class TraceNode {
@@ -52,6 +53,14 @@ public abstract class TraceNode {
     }
 
     public void begin() {
+    }
+
+
+    public void begin(long nanoTime) {
+    }
+
+    public void end(long nanoTime) {
+
     }
 
     public void end() {

@@ -111,10 +111,11 @@ public class InstancesCommand extends AnnotatedCommand {
         } else {
             vmToolCommand.setClassLoaderClass(this.classLoaderClass);
         }
-        String newExpress = "#oldLoader=@java.lang.Thread@currentThread().getContextClassLoader(),@java.lang.Thread@currentThread().setContextClassLoader(classLoader)," + express+",@java.lang.Thread@currentThread().setContextClassLoader(#oldLoader)";
-        if (!StringUtils.isBlank(traceUid)){
-            newExpress = "@com.seewo.honeycomb.log.LogContextHolder@setTraceId(\""+traceUid+"\"),"+newExpress;
+        String newExpress = express;
+        if (!StringUtils.isBlank(traceUid)) {
+            newExpress = "@com.seewo.honeycomb.log.LogContextHolder@setTraceId(\"" + traceUid + "\")," + newExpress;
         }
+        newExpress = "#oldLoader=@java.lang.Thread@currentThread().getContextClassLoader(),@java.lang.Thread@currentThread().setContextClassLoader(classLoader),#resSaver=(" + newExpress + "),@java.lang.Thread@currentThread().setContextClassLoader(#oldLoader),#resSaver";
         vmToolCommand.setExpress(newExpress);
         vmToolCommand.setExpand(this.expand);
         vmToolCommand.setHashCode(this.hashCode);

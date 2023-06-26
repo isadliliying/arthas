@@ -1,6 +1,10 @@
 package com.taobao.arthas.core.shell.handlers.strace;
 
+import com.taobao.arthas.common.Pair;
 import com.taobao.arthas.core.advisor.Advice;
+import com.taobao.arthas.core.command.model.Line;
+
+import java.util.Map;
 
 public class Rest2SpanHandler extends AbstractSpanHandler {
 
@@ -9,6 +13,20 @@ public class Rest2SpanHandler extends AbstractSpanHandler {
         String methodName = advice.getMethod().getName();
         String className = advice.getClazz().getName();
         return "doExecute".equals(methodName) && "org.springframework.web.client.RestTemplate".equals(className);
+    }
+
+    @Override
+    public Pair<String, String> getEnterMark(Line line) {
+        try {
+            return Pair.make("[rest]", "[" + "for-body" + "]");
+        } catch (Exception e) {
+            return Pair.make("[rest]", "unknown");
+        }
+    }
+
+    @Override
+    public boolean hasMatch(Line line) {
+        return line.getMark().equals("RestTemplate#doExecute");
     }
 
     @Override

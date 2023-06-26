@@ -38,10 +38,8 @@ public class STraceCommand extends EnhancerCommand {
     private String conditionExpress;
     private String traceUid;
     private String userUid;
-    private Integer expand = 1;
-    private Integer sizeLimit = 10 * 1024 * 1024;
     private boolean isRegEx = false;
-    private int numberOfLimit = 10;
+    private int numberOfLimit = 1;
 
     /**
      * 主 command 是 transaction 的
@@ -52,6 +50,13 @@ public class STraceCommand extends EnhancerCommand {
      * 是否在 entrance 执行完成之后匹配
      */
     private boolean matchEntranceInFinally = false;
+
+    /**
+     * 是否仅匹配 spring annotation
+     */
+    private boolean matchAnnotationOnly = true;
+
+    private boolean isCreateByBiz = false;
 
     @Argument(index = 0, argName = "transaction-class-pattern")
     public void setClassPattern(String classPattern) {
@@ -69,37 +74,26 @@ public class STraceCommand extends EnhancerCommand {
     }
 
     @Option(shortName = "sc", longName = "spanClass")
+    @DefaultValue("")
     public void setSpanClassPattern(String spanClassPattern) {
         this.spanClassPattern = spanClassPattern;
     }
 
     @Option(shortName = "sm", longName = "spanMethod")
+    @DefaultValue(".*")
     public void setSpanMethodPattern(String spanMethodPattern) {
         this.spanMethodPattern = spanMethodPattern;
     }
 
+    @Option(shortName = "ma", longName = "matchAnnotation", flag = true)
+    @DefaultValue("true")
+    public void setMatchAnnotationOnly(boolean matchAnnotationOnly) {
+        this.matchAnnotationOnly = matchAnnotationOnly;
+    }
 
     @Option(shortName = "f", longName = "finally", flag = true)
     public void setMatchEntranceInFinally(boolean matchEntranceInFinally) {
         this.matchEntranceInFinally = matchEntranceInFinally;
-    }
-
-    @Option(shortName = "M", longName = "sizeLimit")
-    @Description("Upper size limit in bytes for the result (10 * 1024 * 1024 by default)")
-    public void setSizeLimit(Integer sizeLimit) {
-        this.sizeLimit = sizeLimit;
-    }
-
-    @Option(shortName = "x", longName = "expand")
-    @Description("Expand level of object (1 by default), the max value is " + ObjectView.MAX_DEEP)
-    public void setExpand(Integer expand) {
-        this.expand = expand;
-    }
-
-    @Option(shortName = "E", longName = "regex", flag = true)
-    @Description("Enable regular expression to match (wildcard matching by default)")
-    public void setRegEx(boolean regEx) {
-        isRegEx = regEx;
     }
 
     @Option(shortName = "n", longName = "limits")
@@ -124,6 +118,9 @@ public class STraceCommand extends EnhancerCommand {
     protected Matcher getClassNameMatcher() {
         if (classNameMatcher == null) {
             String pattern = isForTransaction ? getTransactionClassPattern() : getSpanClassPattern();
+            if (!isForTransaction && StringUtils.isBlank(pattern)){
+                return null;
+            }
             classNameMatcher = SearchUtils.classNameMatcher(pattern, isRegEx());
         }
         return classNameMatcher;
@@ -163,8 +160,6 @@ public class STraceCommand extends EnhancerCommand {
             sTraceCommand.spanClassPattern = "com.mysql.cj.jdbc.ClientPreparedStatement|org.apache.ibatis.binding.MapperMethod";
             sTraceCommand.spanMethodPattern = "execute";
             sTraceCommand.isRegEx = true;
-            sTraceCommand.expand = this.expand;
-            sTraceCommand.sizeLimit = this.sizeLimit;
             sTraceCommand.numberOfLimit = this.numberOfLimit;
             sTraceCommand.maxNumOfMatchedClass = 50;
 
@@ -178,8 +173,6 @@ public class STraceCommand extends EnhancerCommand {
             sTraceCommandForRest.spanClassPattern = "org.springframework.http.client.ClientHttpRequest|org.springframework.web.client.RestTemplate|com.alibaba.dubbo.rpc.protocol.dubbo.DubboInvoker";
             sTraceCommandForRest.spanMethodPattern = "execute|doExecute|doInvoke";
             sTraceCommandForRest.isRegEx = true;
-            sTraceCommandForRest.expand = this.expand;
-            sTraceCommandForRest.sizeLimit = this.sizeLimit;
             sTraceCommandForRest.numberOfLimit = this.numberOfLimit;
             sTraceCommandForRest.maxNumOfMatchedClass = 50;
 
@@ -192,18 +185,30 @@ public class STraceCommand extends EnhancerCommand {
             sTraceCommandForMq.spanClassPattern = "com.seewo.framework.mq.client.ProducerTemplate|com.alibaba.dubbo.rpc.proxy.InvokerInvocationHandler";
             sTraceCommandForMq.spanMethodPattern = "sendMsg|sendMsgOrderly|invoke";
             sTraceCommandForMq.isRegEx = true;
-            sTraceCommandForMq.expand = this.expand;
-            sTraceCommandForMq.sizeLimit = this.sizeLimit;
             sTraceCommandForMq.numberOfLimit = this.numberOfLimit;
             sTraceCommandForMq.maxNumOfMatchedClass = 50;
 
             //先增强 span
             sTraceCommandForMq.process(process);
+
+
+            //附属 command 是 span 的
+            STraceCommand sTraceCommandForBiz = new STraceCommand();
+            sTraceCommandForBiz.isForTransaction = false;
+            sTraceCommandForBiz.spanClassPattern = spanClassPattern;
+            sTraceCommandForBiz.spanMethodPattern = spanMethodPattern;
+            sTraceCommandForBiz.isRegEx = true;
+            sTraceCommandForBiz.numberOfLimit = this.numberOfLimit;
+            sTraceCommandForBiz.maxNumOfMatchedClass = maxNumOfMatchedClass;
+            sTraceCommandForBiz.isCreateByBiz = true;
+
+            //先增强 span
+            sTraceCommandForBiz.process(process);
         }
 
         super.process(process);
 
-        if (isForTransaction){
+        if (isForTransaction) {
             process.write("files will write in " + LogUtil.straceDir() + "\n");
         }
     }
@@ -220,14 +225,6 @@ public class STraceCommand extends EnhancerCommand {
             conditionList.add(conditionExpress);
         }
         return StringUtils.join(conditionList.toArray(), "&&");
-    }
-
-    public Integer getExpand() {
-        return expand;
-    }
-
-    public Integer getSizeLimit() {
-        return sizeLimit;
     }
 
     public boolean isRegEx() {
@@ -260,5 +257,9 @@ public class STraceCommand extends EnhancerCommand {
 
     public boolean isMatchEntranceInFinally() {
         return matchEntranceInFinally;
+    }
+
+    public boolean isCreateByBiz() {
+        return isCreateByBiz;
     }
 }

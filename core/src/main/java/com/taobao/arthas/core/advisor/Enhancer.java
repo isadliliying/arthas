@@ -6,6 +6,7 @@ import static java.lang.System.arraycopy;
 import java.arthas.SpyAPI;
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
@@ -51,6 +52,7 @@ import com.taobao.arthas.core.advisor.SpyInterceptors.SpyTraceExcludeJDKIntercep
 import com.taobao.arthas.core.advisor.SpyInterceptors.SpyTraceInterceptor1;
 import com.taobao.arthas.core.advisor.SpyInterceptors.SpyTraceInterceptor2;
 import com.taobao.arthas.core.advisor.SpyInterceptors.SpyTraceInterceptor3;
+import com.taobao.arthas.core.command.monitor200.STraceAdviceListener;
 import com.taobao.arthas.core.server.ArthasBootstrap;
 import com.taobao.arthas.core.util.*;
 import com.taobao.arthas.core.util.affect.EnhancerAffect;
@@ -392,11 +394,26 @@ public class Enhancer implements ClassFileTransformer {
                     removeFlag = true;
                 }
             }
+            if (!removeFlag && this.listener instanceof STraceAdviceListener){
+                STraceAdviceListener sTraceAdviceListener = (STraceAdviceListener)listener;
+                if (sTraceAdviceListener.getCommand().isCreateByBiz()) {
+                    removeFlag = !hasSpringAnno(clazz);
+                }
+            }
             if (removeFlag) {
                 it.remove();
             }
         }
         return filteredClasses;
+    }
+
+    private boolean hasSpringAnno(Class<?> clazz){
+        for (Annotation declaredAnnotation : clazz.getDeclaredAnnotations()) {
+            if (declaredAnnotation.annotationType().getName().contains("spring")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isExclude(Class<?> clazz) {
@@ -460,7 +477,7 @@ public class Enhancer implements ClassFileTransformer {
      */
     public synchronized EnhancerAffect enhance(final Instrumentation inst, int maxNumOfMatchedClass) throws UnmodifiableClassException {
         //判定是否需要增强子类,look命令对子类是没有意义的，所以需要做前置判定
-        boolean isDisableSubClass = isLooking || GlobalOptions.isDisableSubClass;
+        boolean isDisableSubClass = isLooking || GlobalOptions.isDisableSubClass || (listener instanceof STraceAdviceListener && ((STraceAdviceListener)listener).getCommand().isCreateByBiz());
 
         // 获取需要增强的类集合
         this.matchingClasses = isDisableSubClass

@@ -2,24 +2,27 @@ package com.taobao.arthas.core.command.monitor200;
 
 import com.alibaba.arthas.deps.org.slf4j.Logger;
 import com.alibaba.arthas.deps.org.slf4j.LoggerFactory;
+import com.taobao.arthas.common.Pair;
 import com.taobao.arthas.core.advisor.Advice;
 import com.taobao.arthas.core.advisor.AdviceListenerAdapter;
 import com.taobao.arthas.core.advisor.ArthasMethod;
+import com.taobao.arthas.core.command.model.ThreadNode;
+import com.taobao.arthas.core.command.model.TraceModel;
+import com.taobao.arthas.core.command.model.TraceTree;
+import com.taobao.arthas.core.command.view.TraceView;
 import com.taobao.arthas.core.shell.command.CommandProcess;
 import com.taobao.arthas.core.shell.handlers.strace.SpanHandler;
 import com.taobao.arthas.core.shell.handlers.strace.SpanHandlerHolder;
-import com.taobao.arthas.core.util.DateUtils;
-import com.taobao.arthas.core.util.JsonUtils;
-import com.taobao.arthas.core.util.LogUtil;
-import com.taobao.arthas.core.util.StringUtils;
+import com.taobao.arthas.core.util.*;
+import com.taobao.arthas.core.view.TreeView;
 
 import java.arthas.SpyAPI;
-import java.io.FileOutputStream;
-import java.util.Date;
+import java.io.*;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class STraceAdviceListener extends AdviceListenerAdapter {
+public class STraceAdviceListener extends AdviceListenerAdapter {
 
     private static final ThreadLocal<AtomicInteger> tagCountRef = new ThreadLocal<AtomicInteger>();
 
@@ -43,8 +46,6 @@ class STraceAdviceListener extends AdviceListenerAdapter {
             if (SpyAPI.getTraceUid() == null) return;
             doSpanEnter(advice);
         }
-
-
     }
 
     @Override
@@ -71,8 +72,6 @@ class STraceAdviceListener extends AdviceListenerAdapter {
             if (SpyAPI.getTraceUid() == null) return;
             doSpanExit(advice);
         }
-
-
     }
 
     private void doSpanEnter(Advice advice) {
@@ -80,17 +79,16 @@ class STraceAdviceListener extends AdviceListenerAdapter {
         String clzName = advice.getClazz().getSimpleName();
         String methodName = advice.getMethod().getName();
 
-        SpanHandler handler = SpanHandlerHolder.matchHandler(advice);
+        SpanHandler handler = SpanHandlerHolder.matchHandler(advice, command.isCreateByBiz());
         if (handler == null) return;
         int count = tagCountRef.get().incrementAndGet();
 
         Object ognlObj = handler.enterOgnlObj(advice);
+        String mark = clzName + "#" + methodName;
         String content = JsonUtils.toJSONString(ognlObj);
-        String text = String.format("[span][enter][%s][%s][%s][%s]", DateUtils.formatDate(new Date()), clzName, methodName, content);
-        text = padWithTab(text,count);
+        String text = String.format("[span][enter][%s][%s][%s]", System.nanoTime(), mark, content);
+        text = padWithTab(text, count);
         appendToFile(currentTraceUid, text);
-
-
     }
 
 
@@ -101,27 +99,20 @@ class STraceAdviceListener extends AdviceListenerAdapter {
         String clzName = advice.getClazz().getSimpleName();
         String methodName = advice.getMethod().getName();
 
-        boolean hasException = advice.getThrowExp() != null;
-
-        SpanHandler handler = SpanHandlerHolder.matchHandler(advice);
+        SpanHandler handler = SpanHandlerHolder.matchHandler(advice, command.isCreateByBiz());
         if (handler == null) return;
 
         int count = tagCountRef.get().getAndDecrement();
-        Object ognlObj = handler.exitOgnlObj(advice);
-        String content = JsonUtils.toJSONString(ognlObj);
-        String text = String.format("[span][exit][%s][%s][%s][%s][%s]", DateUtils.formatDate(new Date()), hasException, clzName, methodName, content);
-        text = padWithTab(text,count);
+        Object exitOgnlObj = handler.exitOgnlObj(advice);
+        String content = JsonUtils.toJSONString(exitOgnlObj);
+        String mark = clzName + "#" + methodName;
+        String text = String.format("[span][exit][%s][%s][%s]", System.nanoTime(), mark, content);
+        text = padWithTab(text, count);
         appendToFile(currentTraceUid, text);
 
     }
 
     private void doTransactionEnter(Advice advice) {
-        process.times().incrementAndGet();
-        if (isLimitExceeded(command.getNumberOfLimit(), process.times().get())) {
-            abortProcess(process, command.getNumberOfLimit());
-            return;
-        }
-
         if (!command.isMatchEntranceInFinally()) {
             if (hasConditionNotMatch(advice)) {
                 return;
@@ -135,14 +126,27 @@ class STraceAdviceListener extends AdviceListenerAdapter {
             String traceUid = generateTraceUid(clzName, methodName);
             SpyAPI.setTraceUid(traceUid);
             currentTraceUid = traceUid;
+            process.times().incrementAndGet();
+            if (isLimitExceeded(command.getNumberOfLimit() + 1, process.times().get())) {
+                abortProcess(process, command.getNumberOfLimit());
+                return;
+            }
+        } else {
+            return;
         }
-        String text = String.format("[transaction][enter][%s][%s][%s]", System.currentTimeMillis(), clzName, methodName);
-        appendToFile(currentTraceUid, text);
 
-        process.write(text);
+        process.write("transaction:" + currentTraceUid + " is beginning.");
         process.write("\n");
 
-        tagCountRef.set(new AtomicInteger(0));
+        HashMap<String, Object> enterMap = new HashMap<String, Object>();
+        enterMap.put("args", advice.getParams());
+        String argText = JsonUtils.toJSONString(enterMap);
+        String mark = clzName + "#" + methodName;
+        String text = String.format("[transaction][enter][%s][%s][%s]", System.nanoTime(), mark, argText);
+        appendToFile(currentTraceUid, text);
+
+
+        tagCountRef.set(new AtomicInteger(2));
     }
 
     private void doTransactionExit(Advice advice) {
@@ -157,19 +161,41 @@ class STraceAdviceListener extends AdviceListenerAdapter {
 
         String clzName = advice.getClazz().getSimpleName();
         String methodName = advice.getMethod().getName();
-        String text = String.format("[transaction][exit][%s][%s][%s]", System.currentTimeMillis(), clzName, methodName);
+        HashMap<String, Object> exitMap = new HashMap<String, Object>();
+        exitMap.put("returnObj", advice.getReturnObj());
+        String returnText = JsonUtils.toJSONString(exitMap);
+        String mark = clzName + "#" + methodName;
+        String text = String.format("[transaction][exit][%s][%s][%s]", System.nanoTime(), mark, returnText);
         appendToFile(currentTraceUid, text);
-
-        process.write(text);
-        process.write("\n");
 
         SpyAPI.setTraceUid(null);
 
+        //do transform
+        String logFile = getLogFileName(currentTraceUid);
+        String jsonFile = getJsonFileName(currentTraceUid);
+
+        ThreadNode threadNode = ThreadUtil.getThreadNode(advice.getLoader(), Thread.currentThread());
+        TraceTree tree = StraceUtils.transformFile(logFile, jsonFile, threadNode);
+        TraceView traceView = new TraceView();
+        String treeStr = traceView.drawTree(tree.getRoot());
+        process.write(treeStr);
+
+        process.write("transaction:" + currentTraceUid + " is end.\n");
+        process.write("logFile:" + logFile + "\n");
+        process.write("jsonFile:" + jsonFile + "\n");
+        process.write("\n");
+    }
+
+    private static String getLogFileName(String traceUid) {
+        return LogUtil.straceDir() + traceUid + ".log";
+    }
+
+    private static String getJsonFileName(String traceUid) {
+        return LogUtil.straceDir() + traceUid + ".json";
     }
 
     private static void appendToFile(String traceUid, String text) {
-        String logFile = LogUtil.straceDir() + traceUid + ".log";
-
+        String logFile = getLogFileName(traceUid);
         try {
             FileOutputStream outputStream = new FileOutputStream(logFile, true);
             try {
@@ -184,7 +210,7 @@ class STraceAdviceListener extends AdviceListenerAdapter {
     }
 
     private static String generateTraceUid(String clzName, String methodName) {
-        return System.currentTimeMillis() + clzName + "-" + methodName + "-" + UUID.randomUUID().toString().replace("-", "");
+        return System.nanoTime() + "-" + clzName + "-" + methodName + "-" + UUID.randomUUID().toString().replace("-", "");
     }
 
     private boolean hasConditionNotMatch(Advice advice) {
@@ -198,12 +224,25 @@ class STraceAdviceListener extends AdviceListenerAdapter {
         }
     }
 
-    private static String padWithTab(String text,int count){
+    private static String padWithTab(String text, int count) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < count; i++) {
             sb.append("\t");
         }
         return sb.append(text).toString();
     }
+
+    public STraceCommand getCommand() {
+        return command;
+    }
+
+    public static Pair<String, Integer> findNextBlock(String text, int begin) {
+        int fromIdx = text.indexOf('[', begin);
+        if (fromIdx < 0) return null;
+        int endIdx = text.indexOf(']', fromIdx + 1);
+        if (endIdx < 0) return null;
+        return Pair.make(text.substring(fromIdx, endIdx), endIdx);
+    }
+
 
 }

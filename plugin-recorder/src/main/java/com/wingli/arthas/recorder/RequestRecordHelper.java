@@ -413,10 +413,11 @@ public class RequestRecordHelper {
      */
     private static boolean needToRecordHttp(HttpRequestInfo httpRequestInfo) {
 
-        String regex = System.getProperty("arthas.recorder.http", "").trim();
-        if (regex.isEmpty() || countAlreadyReach()) {
+        String includeExpress = System.getProperty("arthas.recorder.http", "").trim();
+        if (includeExpress.isEmpty() || countAlreadyReach()) {
             return false;
         }
+        String excludeExpress = System.getProperty("arthas.recorder.exclude", "").trim();
 
         String method = httpRequestInfo.getMethod().toUpperCase();
         String url = httpRequestInfo.getUrlWithoutQuery();
@@ -425,9 +426,13 @@ public class RequestRecordHelper {
             return false;
         }
         String param = method + " " + url;
-        if (!Pattern.matches(regex, param)) {
+        if (!Pattern.matches(includeExpress, param)) {
             return false;
         }
+        if (StringUtils.isNotBlank(excludeExpress) && Pattern.matches(excludeExpress, param)) {
+            return false;
+        }
+
 
         //ignore health check
         if (url.equals("/")) {
@@ -438,12 +443,16 @@ public class RequestRecordHelper {
     }
 
     private static boolean needToRecordDubbo(String dubboInterface, String dubboMethod) {
-        String regex = System.getProperty("arthas.recorder.dubbo", "").trim();
-        if (regex.isEmpty() || countAlreadyReach()) {
+        String includeExpress = System.getProperty("arthas.recorder.dubbo", "").trim();
+        String excludeExpress = System.getProperty("arthas.recorder.exclude", "").trim();
+        if (includeExpress.isEmpty() || countAlreadyReach()) {
             return false;
         }
         String param = dubboInterface + " " + dubboMethod;
-        if (!Pattern.matches(regex, param)) {
+        if (!Pattern.matches(includeExpress, param)) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(excludeExpress) && Pattern.matches(excludeExpress, param)) {
             return false;
         }
 

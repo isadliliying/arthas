@@ -42,6 +42,8 @@ public class RecorderCommand extends AnnotatedCommand {
 
     private String httpExpress;
 
+    private String excludeExpress;
+
     private String taskName;
 
     private int numLimit;
@@ -58,6 +60,13 @@ public class RecorderCommand extends AnnotatedCommand {
     @Description("http match regex! use uri! eg: GET /v1/store/")
     public void setHttpExpress(String dubboExpress) {
         this.httpExpress = dubboExpress;
+    }
+
+    @Option(shortName = "e", longName = "exclude")
+    @DefaultValue("")
+    @Description("http match regex! use uri! eg: .*(/v1/store/)")
+    public void setExcludeExpress(String excludeExpress) {
+        this.excludeExpress = excludeExpress;
     }
 
     @Option(shortName = "n", longName = "limit")
@@ -97,6 +106,8 @@ public class RecorderCommand extends AnnotatedCommand {
             process.appendResult(new RecorderModel("recorder: http " + String.valueOf(httpExpress)));
             System.setProperty("arthas.recorder.dubbo", dubboExpress);
             process.appendResult(new RecorderModel("recorder: dubbo " + String.valueOf(dubboExpress)));
+            System.setProperty("arthas.recorder.exclude", excludeExpress);
+            process.appendResult(new RecorderModel("recorder: exclude " + String.valueOf(excludeExpress)));
             System.setProperty("arthas.recorder.task.name", taskName);
             process.appendResult(new RecorderModel("recorder: task name " + String.valueOf(taskName)));
 
