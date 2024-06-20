@@ -21,6 +21,7 @@ import com.taobao.arthas.common.Pair;
 import com.taobao.arthas.core.advisor.SpyInterceptors;
 import com.taobao.arthas.core.util.EncryptUtils;
 import com.taobao.arthas.core.util.StringUtils;
+import com.taobao.arthas.core.view.Ansi;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -32,9 +33,12 @@ public class LineHelper {
 
     private static final String LOCATION_CODE_SPLITTER = "-";
     public static final String LOCAL_VARIABLES_NAME_EXCLUDE_MATCHER = "*$*";
-    private static final String LOCATION_CONTENT_VARIABLE_FORMATTER = "assign-variable: %s";
-    private static final String LOCATION_CONTENT_METHOD_FORMATTER = "invoke-method: %s#%s:%s";
-    private static final String LOCATION_VIEW_LINE_FORMATTER = "/*%s*/   %s   %s";
+    private static final String LOCATION_CONTENT_VARIABLE_FORMATTER = "assign-variable:%s";
+    private static final String LOCATION_CONTENT_METHOD_FORMATTER = "invoke-method:%s#%s:%s";
+    private static final String LOCATION_VIEW_LINE_SPLIT_LINE = "------------------------- lineCode location -------------------------";
+    private static final String LOCATION_VIEW_LINE_HEADER = "format： /*LineNumber*/ (LineCode)-> Instruction";
+    private static final String LOCATION_VIEW_LINE_FORMATTER_POINTER = "/*%-3s*/ (%s)->  ";
+    private static final String LOCATION_VIEW_LINE_FORMATTER_INSTRUCTION = "                  %s";
     public static final String VARIABLE_RENAME = "-renamed-";
     public static final String EXCLUDE_VARIABLE_THIS = "this";
 
@@ -289,15 +293,24 @@ public class LineHelper {
 
     /**
      * 生成方法的jad视图，形如：
-     * /*82* /   f0bd-1   invoke-method: java.util.ArrayList#<init>:(I)V
-     * /*83* /   7cda-1   invoke-method: java.lang.Iterable#iterator:()Ljava/util/Iterator;
-     * /*83* /   ad72-1   invoke-method: java.util.Iterator#hasNext:()Z
-     * /*83* /   b105-1   invoke-method: java.util.Iterator#next:()Ljava/lang/Object;
-     * /*84* /   11a1-1   assign-variable: it
-     * /*84* /   f9e5-1   invoke-method: java.lang.Number#intValue:()I
+     * /*82* / (f0bd-1)->
+     *                      invoke-method: java.util.ArrayList#<init>:(I)V
+     * /*83* / (7cda-1)->
+     *                      invoke-method: java.lang.Iterable#iterator:()Ljava/util/Iterator;
+     * /*83* / (ad72-1)->
+     *                      invoke-method: java.util.Iterator#hasNext:()Z
+     * /*83* / (b105-1)->
+     *                      invoke-method: java.util.Iterator#next:()Ljava/lang/Object;
+     * /*84* / (11a1-1)->
+     *                      assign-variable: it
+     * /*84* / (f9e5-1)->
+     *                      invoke-method: java.lang.Number#intValue:()I
      */
     private static List<String> renderMethodView(MethodNode methodNode) {
         List<String> printLines = new LinkedList<String>();
+
+        printLines.add(LOCATION_VIEW_LINE_SPLIT_LINE);
+        printLines.add(LOCATION_VIEW_LINE_HEADER);
 
         //读取变量表
         Map<Integer, String> varIdxMap = new HashMap<Integer, String>();
@@ -320,8 +333,11 @@ public class LineHelper {
         for (int i = 0; i < contentAndCode.size(); i++) {
             Pair<String, String> contentCodePair = contentAndCode.get(i);
             Integer preLineNumber = preLineNumberList.get(i);
-            String printLine = String.format(LOCATION_VIEW_LINE_FORMATTER, preLineNumber, contentCodePair.getSecond(), contentCodePair.getFirst());
-            printLines.add(printLine);
+            String lineCode = Ansi.ansi().fg(Ansi.Color.GREEN).a(contentCodePair.getSecond()).reset().toString();
+            String pointer = String.format(LOCATION_VIEW_LINE_FORMATTER_POINTER, preLineNumber, lineCode);
+            String instruction = String.format(LOCATION_VIEW_LINE_FORMATTER_INSTRUCTION,contentCodePair.getFirst());
+            printLines.add(pointer);
+            printLines.add(instruction);
         }
 
         return printLines;
